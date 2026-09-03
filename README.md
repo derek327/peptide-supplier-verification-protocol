@@ -13,6 +13,8 @@ documentation-first procurement standard.
 
 - `docs/coa-field-guide.md` — field-by-field guide to verifying a Certificate of Analysis
 - `docs/hplc-method-notes.md` — how to judge whether an HPLC purity figure is meaningful
+- `docs/retatrutide-procurement-notes.md` — procurement documentation checklist for retatrutide research lots
+- `docs/lyophilized-stability-notes.md` — storage / reconstitution / documentation notes for lyophilized peptides
 - `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
 
 ```bash
