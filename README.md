@@ -9,6 +9,18 @@ documentation-first procurement standard.
 **OEM / private label:** https://helixpeptideoem.com
 **Wholesale / bulk:** https://helixpeptidesupply.com
 
+## Repository contents
+
+- `docs/coa-field-guide.md` — field-by-field guide to verifying a Certificate of Analysis
+- `docs/hplc-method-notes.md` — how to judge whether an HPLC purity figure is meaningful
+- `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
+
+```bash
+python3 scripts/coa_checklist.py --json coa.json   # exit 0 pass / 1 review / 2 fail
+```
+
+---
+
 ---
 
 ## 1. Lot-Specific Documentation
