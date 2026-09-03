@@ -13,6 +13,9 @@ documentation-first procurement standard.
 
 - `docs/coa-field-guide.md` — field-by-field guide to verifying a Certificate of Analysis
 - `docs/hplc-method-notes.md` — how to judge whether an HPLC purity figure is meaningful
+- `docs/bpc-157-procurement-notes.md` — procurement documentation notes for BPC-157 research lots
+- `docs/tirzepatide-procurement-notes.md` — C-terminal amidation, mass, and handling notes for tirzepatide lots
+- `docs/ghk-cu-procurement-notes.md` — copper-complex verification notes for GHK-Cu lots
 - `docs/retatrutide-procurement-notes.md` — procurement documentation checklist for retatrutide research lots
 - `docs/lyophilized-stability-notes.md` — storage / reconstitution / documentation notes for lyophilized peptides
 - `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
