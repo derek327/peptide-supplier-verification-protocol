@@ -5,7 +5,7 @@ research-grade peptide suppliers. Published by Helix Peptide as part of our
 documentation-first procurement standard.
 
 **Site:** https://gethelixpeptide.com
-**CoA / QA standard:** https://gethelixgmppeptides.com/coa-guide
+**CoA / QA standard:** https://helixgmppeptides.com/coa-guide
 **OEM / private label:** https://helixpeptideoem.com
 **Wholesale / bulk:** https://helixpeptidesupply.com
 
@@ -13,6 +13,8 @@ documentation-first procurement standard.
 
 - `docs/coa-field-guide.md` — field-by-field guide to verifying a Certificate of Analysis
 - `docs/hplc-method-notes.md` — how to judge whether an HPLC purity figure is meaningful
+- `docs/lot-documentation-package-spec.md` — minimum lot file set for receiving / OEM handoff
+- `docs/supplier-audit-questionnaire.md` — first-order questions for a new research-peptide supplier
 - `docs/bpc-157-procurement-notes.md` — procurement documentation notes for BPC-157 research lots
 - `docs/tirzepatide-procurement-notes.md` — C-terminal amidation, mass, and handling notes for tirzepatide lots
 - `docs/ghk-cu-procurement-notes.md` — copper-complex verification notes for GHK-Cu lots
