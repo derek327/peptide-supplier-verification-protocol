@@ -13,6 +13,7 @@ documentation-first procurement standard.
 
 - `docs/coa-field-guide.md` — field-by-field guide to verifying a Certificate of Analysis
 - `docs/hplc-method-notes.md` — how to judge whether an HPLC purity figure is meaningful
+- `docs/lc-ms-identity-reading-guide.md` — how to read an LC-MS mass confirmation report (charge states, adducts, acceptance thresholds)
 - `docs/lot-documentation-package-spec.md` — minimum lot file set for receiving / OEM handoff
 - `docs/shipping-packaging-requirements.md` — packaging layers, temperature recording, and receiving inspection for research peptide shipments
 - `docs/supplier-audit-questionnaire.md` — first-order questions for a new research-peptide supplier
