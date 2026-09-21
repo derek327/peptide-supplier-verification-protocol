@@ -12,6 +12,7 @@ documentation-first procurement standard.
 ## Repository contents
 
 - `docs/coa-field-guide.md` — field-by-field guide to verifying a Certificate of Analysis
+- `docs/coa-document-forensics.md` — detecting recycled, templated and edited CoAs (cross-reference checks, PDF metadata, chromatogram reuse)
 - `docs/hplc-method-notes.md` — how to judge whether an HPLC purity figure is meaningful
 - `docs/lc-ms-identity-reading-guide.md` — how to read an LC-MS mass confirmation report (charge states, adducts, acceptance thresholds)
 - `docs/lot-documentation-package-spec.md` — minimum lot file set for receiving / OEM handoff
