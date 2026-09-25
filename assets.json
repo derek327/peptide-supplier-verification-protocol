@@ -129,7 +129,8 @@
     "https://helixgmppeptides.com/coa-guide"
    ],
    "link_verified": "2026-09-26",
-   "link_verified_how": "浏览器逐条抽查：记录页含我站锚点且 rel 无 nofollow"
+   "link_verified_how": "浏览器逐条抽查：记录页含我站锚点且 rel 无 nofollow",
+   "links_fixed": "2026-09-26"
   },
   {
    "kind": "zenodo",
