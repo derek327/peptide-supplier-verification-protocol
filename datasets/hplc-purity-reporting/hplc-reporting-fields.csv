@@ -1,0 +1,11 @@
+code,field,typical_value,why_it_matters
+RP.01,Column chemistry and dimensions,"C18, 4.6 x 250 mm, 5 um (or stated equivalent)","Without it, retention and selectivity cannot be compared between laboratories."
+RP.02,Mobile phase composition (A/B),0.1% TFA in water / 0.1% TFA in acetonitrile,Ion-pairing choice shifts elution order; different systems are not interchangeable.
+RP.03,Gradient profile,"e.g. 5-65% B over 30 min, linear",A percentage without a ramp time is not a method.
+RP.04,Detection wavelength,220 nm (peptide backbone),Amide absorbance varies by sequence; a different wavelength changes the reported purity.
+RP.05,Flow rate and column temperature,"1.0 mL/min, 25 C",Both affect resolution and therefore the integration baseline.
+RP.06,Run time / total acquisition,35 min (30 min gradient + rinse/re-equilibration),Truncated runs hide late-eluting impurities.
+RP.07,Injection volume and sample concentration,e.g. 10 uL of 1 mg/mL,Overloaded injections distort area-% in both directions.
+RP.08,Integration threshold and baseline rule,e.g. ignore <0.05 area-%,The reporting threshold determines the number that gets quoted.
+RP.09,Impurity reporting limit,0.05-0.10 area-% (state which),Unstated limits make two '99%' claims incomparable.
+RP.10,Detector linearity / system suitability data,"Resolution, tailing factor, theoretical plates",Without suitability data the run is not demonstrably valid.

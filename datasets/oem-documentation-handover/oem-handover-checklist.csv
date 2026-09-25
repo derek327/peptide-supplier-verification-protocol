@@ -1,0 +1,20 @@
+item_no,stage,item,binding,cost_if_missing
+OEM01,pre-award,"Specification sheet (identity, sequence, salt form, declared purity basis)",contractual,Buyer cannot verify the article received against what was contracted; disputes become unresolvable in practice.
+OEM02,pre-award,"Quality agreement (responsibilities, deviation notification, audit rights)",contractual,Deviation handling is undefined; the manufacturer decides what to disclose.
+OEM03,pre-award,Change-control notice period and change classes,contractual,"Silent changes to synthesis route, salt form or supplier cascade into the buyer's product without notice."
+OEM04,pre-award,"Method description for purity determination (column, gradient, wavelength)",recommended,Purity numbers are not comparable between batches or between suppliers.
+OEM05,first-article,Certificate of analysis for the first article batch,contractual,No baseline exists for routine supply; every later CoA is judged in isolation.
+OEM06,first-article,Mass spectrometry report with observed and theoretical mass,contractual,Identity claim rests on a single measurement without a comparison reference.
+OEM07,first-article,Residual solvent / counter-ion data (e.g. TFA content),recommended,Downstream assay reproducibility suffers; salt form effects appear as unexplained variability.
+OEM08,first-article,"Handling, solubility and storage instruction sheet",recommended,"Product is mishandled in the buyer's own storage chain, then blamed on the supplier."
+OEM09,first-article,"Named testing laboratory, with accreditation identifier where available",recommended,Third-party data cannot be verified or re-queried.
+OEM10,first-article,"Artwork, labelling and translation approval trail",contractual,Label claims drift from the approved content; regulatory exposure sits with the label holder.
+OEM11,routine-supply,"Batch record / batch-level traceability (sequence, purification, lyophilisation)",recommended,Root-cause investigation after a complaint is limited to what the supplier chooses to share.
+OEM12,routine-supply,"Stability data and retest interval, with storage conditions tested",recommended,Expiry dating is assumed rather than supported.
+OEM13,routine-supply,"Deviation and out-of-specification notification in practice, not only on paper",recommended,Recall scope cannot be bounded quickly because notification history does not exist.
+OEM14,routine-supply,Annual documentation review schedule,recommended,Specifications age silently; the buyer discovers stale claims during an audit.
+OEM15,handover,"Full document set transfer (specs, methods, batch records, CoAs)",contractual,Handbook ends with the supplier relationship; the buyer cannot reproduce the product.
+OEM16,handover,Reference standards or retained samples of the last accepted batches,contractual,No comparison baseline exists for qualifying the next supplier.
+OEM17,handover,Method transfer package for the replacement manufacturer,recommended,Requalification restarts from scratch; months are lost to method development.
+OEM18,handover,Open deviation register and complaint history,recommended,Known weaknesses are rediscovered by the next manufacturer through failure.
+OEM19,handover,"Confirmation of residual obligations (confidentiality, non-compete, warranty period)",contractual,Post-termination obligations are ambiguous at the moment they matter.

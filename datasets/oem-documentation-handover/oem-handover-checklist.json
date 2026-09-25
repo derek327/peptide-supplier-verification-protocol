@@ -1,0 +1,154 @@
+{
+  "name": "OEM / Private-Label Peptide Documentation Handover Checklist",
+  "version": "1.0",
+  "stages": {
+    "pre-award": "before the supply agreement is signed",
+    "first-article": "first delivered batch / qualification lot",
+    "routine-supply": "steady-state supply",
+    "handover": "at the end of the supply relationship"
+  },
+  "binding_definition": {
+    "contractual": "should be an explicit deliverable in the supply agreement",
+    "recommended": "request at qualification; strongly advised"
+  },
+  "items": [
+    {
+      "item_no": "OEM01",
+      "stage": "pre-award",
+      "item": "Specification sheet (identity, sequence, salt form, declared purity basis)",
+      "binding": "contractual",
+      "cost_if_missing": "Buyer cannot verify the article received against what was contracted; disputes become unresolvable in practice."
+    },
+    {
+      "item_no": "OEM02",
+      "stage": "pre-award",
+      "item": "Quality agreement (responsibilities, deviation notification, audit rights)",
+      "binding": "contractual",
+      "cost_if_missing": "Deviation handling is undefined; the manufacturer decides what to disclose."
+    },
+    {
+      "item_no": "OEM03",
+      "stage": "pre-award",
+      "item": "Change-control notice period and change classes",
+      "binding": "contractual",
+      "cost_if_missing": "Silent changes to synthesis route, salt form or supplier cascade into the buyer's product without notice."
+    },
+    {
+      "item_no": "OEM04",
+      "stage": "pre-award",
+      "item": "Method description for purity determination (column, gradient, wavelength)",
+      "binding": "recommended",
+      "cost_if_missing": "Purity numbers are not comparable between batches or between suppliers."
+    },
+    {
+      "item_no": "OEM05",
+      "stage": "first-article",
+      "item": "Certificate of analysis for the first article batch",
+      "binding": "contractual",
+      "cost_if_missing": "No baseline exists for routine supply; every later CoA is judged in isolation."
+    },
+    {
+      "item_no": "OEM06",
+      "stage": "first-article",
+      "item": "Mass spectrometry report with observed and theoretical mass",
+      "binding": "contractual",
+      "cost_if_missing": "Identity claim rests on a single measurement without a comparison reference."
+    },
+    {
+      "item_no": "OEM07",
+      "stage": "first-article",
+      "item": "Residual solvent / counter-ion data (e.g. TFA content)",
+      "binding": "recommended",
+      "cost_if_missing": "Downstream assay reproducibility suffers; salt form effects appear as unexplained variability."
+    },
+    {
+      "item_no": "OEM08",
+      "stage": "first-article",
+      "item": "Handling, solubility and storage instruction sheet",
+      "binding": "recommended",
+      "cost_if_missing": "Product is mishandled in the buyer's own storage chain, then blamed on the supplier."
+    },
+    {
+      "item_no": "OEM09",
+      "stage": "first-article",
+      "item": "Named testing laboratory, with accreditation identifier where available",
+      "binding": "recommended",
+      "cost_if_missing": "Third-party data cannot be verified or re-queried."
+    },
+    {
+      "item_no": "OEM10",
+      "stage": "first-article",
+      "item": "Artwork, labelling and translation approval trail",
+      "binding": "contractual",
+      "cost_if_missing": "Label claims drift from the approved content; regulatory exposure sits with the label holder."
+    },
+    {
+      "item_no": "OEM11",
+      "stage": "routine-supply",
+      "item": "Batch record / batch-level traceability (sequence, purification, lyophilisation)",
+      "binding": "recommended",
+      "cost_if_missing": "Root-cause investigation after a complaint is limited to what the supplier chooses to share."
+    },
+    {
+      "item_no": "OEM12",
+      "stage": "routine-supply",
+      "item": "Stability data and retest interval, with storage conditions tested",
+      "binding": "recommended",
+      "cost_if_missing": "Expiry dating is assumed rather than supported."
+    },
+    {
+      "item_no": "OEM13",
+      "stage": "routine-supply",
+      "item": "Deviation and out-of-specification notification in practice, not only on paper",
+      "binding": "recommended",
+      "cost_if_missing": "Recall scope cannot be bounded quickly because notification history does not exist."
+    },
+    {
+      "item_no": "OEM14",
+      "stage": "routine-supply",
+      "item": "Annual documentation review schedule",
+      "binding": "recommended",
+      "cost_if_missing": "Specifications age silently; the buyer discovers stale claims during an audit."
+    },
+    {
+      "item_no": "OEM15",
+      "stage": "handover",
+      "item": "Full document set transfer (specs, methods, batch records, CoAs)",
+      "binding": "contractual",
+      "cost_if_missing": "Handbook ends with the supplier relationship; the buyer cannot reproduce the product."
+    },
+    {
+      "item_no": "OEM16",
+      "stage": "handover",
+      "item": "Reference standards or retained samples of the last accepted batches",
+      "binding": "contractual",
+      "cost_if_missing": "No comparison baseline exists for qualifying the next supplier."
+    },
+    {
+      "item_no": "OEM17",
+      "stage": "handover",
+      "item": "Method transfer package for the replacement manufacturer",
+      "binding": "recommended",
+      "cost_if_missing": "Requalification restarts from scratch; months are lost to method development."
+    },
+    {
+      "item_no": "OEM18",
+      "stage": "handover",
+      "item": "Open deviation register and complaint history",
+      "binding": "recommended",
+      "cost_if_missing": "Known weaknesses are rediscovered by the next manufacturer through failure."
+    },
+    {
+      "item_no": "OEM19",
+      "stage": "handover",
+      "item": "Confirmation of residual obligations (confidentiality, non-compete, warranty period)",
+      "binding": "contractual",
+      "cost_if_missing": "Post-termination obligations are ambiguous at the moment they matter."
+    }
+  ],
+  "how_to_use": [
+    "Mark each contractual item: obtained / promised / absent, per supplier.",
+    "Score per stage rather than overall - a missing handover item is invisible until the relationship ends.",
+    "Attach the 'cost if missing' column to the negotiation, not the audit: it states the consequence in the buyer's terms."
+  ]
+}

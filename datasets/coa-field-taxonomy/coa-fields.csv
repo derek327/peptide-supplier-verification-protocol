@@ -1,0 +1,31 @@
+section_id,section,code,label,requirement,units,notes
+S1,Product identity,S1.01,Product name,required,,Trivial name plus systematic/INN where one exists.
+S1,Product identity,S1.02,Sequence,required,,"One-letter code; note D-amino acids, N-terminal acetylation and C-terminal amidation explicitly."
+S1,Product identity,S1.03,Molecular formula,required,,Must include counter-ion and hydration state where known.
+S1,Product identity,S1.04,Molecular weight (monoisotopic),required,Da,Distinguish monoisotopic from average.
+S1,Product identity,S1.05,Molecular weight (average),optional,Da,
+S1,Product identity,S1.06,CAS / catalog number,optional,,
+S1,Product identity,S1.07,Salt / counter-ion form,required,,"e.g. acetate, TFA, hydrochloride. TFA content changes both mass and biological comparability."
+S1,Product identity,S1.08,Batch / lot number,required,,Must be traceable to the testing report.
+S2,Purity and assay,S2.01,Chromatographic purity,required,area-%,State the detection wavelength and method; area-% is not the same as content.
+S2,Purity and assay,S2.02,Purity method,required,,"Column, gradient, wavelength, run time."
+S2,Purity and assay,S2.03,Assay / content,optional,mass-%,Mass balance basis for the declared quantity.
+S2,Purity and assay,S2.04,Impurity profile,optional,area-%,Individual named impurities above the reporting threshold.
+S2,Purity and assay,S2.05,Related substances / deletion peptides,optional,area-%,
+S3,Identity confirmation,S3.01,Mass spectrometry result,required,m/z or Da,Observed vs theoretical; include the ion mode.
+S3,Identity confirmation,S3.02,MS method,required,,"e.g. ESI-LCMS, MALDI-TOF."
+S3,Identity confirmation,S3.03,Amino acid analysis,optional,mol-%,
+S3,Identity confirmation,S3.04,Peptide content (elemental / nitrogen),optional,mass-%,
+S4,Residuals and safety,S4.01,Residual solvents,optional,ppm,Where applicable to the synthesis route.
+S4,Residuals and safety,S4.02,Trifluoroacetic acid (TFA) content,optional,%,Relevant when the salt form matters for downstream assay.
+S4,Residuals and safety,S4.03,Water content (Karl Fischer),optional,%,
+S4,Residuals and safety,S4.04,Heavy metals,optional,ppm,
+S4,Residuals and safety,S4.05,Microbial limits,optional,CFU/g,
+S4,Residuals and safety,S4.06,Endotoxin,optional,EU/mg,
+S5,"Storage, handling and traceability",S5.01,Storage conditions,required,,Temperature and light protection; state whether lyophilised or in solution.
+S5,"Storage, handling and traceability",S5.02,Retest / expiry date,required,,
+S5,"Storage, handling and traceability",S5.03,Appearance,optional,,
+S5,"Storage, handling and traceability",S5.04,Solubility guidance,optional,,
+S5,"Storage, handling and traceability",S5.05,Testing laboratory,required,,"Name and, where available, accreditation or registration identifier."
+S5,"Storage, handling and traceability",S5.06,Report identifier / date of analysis,required,,
+S5,"Storage, handling and traceability",S5.07,Authorised signature,required,,

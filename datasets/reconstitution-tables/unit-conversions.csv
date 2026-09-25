@@ -1,0 +1,7 @@
+from,to,factor,note
+1 mg/mL,1 ug/uL,1,mass-per-volume equality
+1 mg,1000 ug,1000,
+1 mL,1000 uL,1000,
+1 % (w/v),10 mg/mL,10,1 g per 100 mL
+IU (peptide),not convertible,,IU requires a substance-specific bioassay definition; do not convert to mass
+1 Da,1 g/mol,1,

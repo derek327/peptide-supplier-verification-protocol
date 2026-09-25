@@ -1,0 +1,79 @@
+{
+  "name": "HPLC Purity Reporting Checklist and Coding Scheme for Research Peptides",
+  "version": "1.0",
+  "scope": "Fields that must accompany a chromatographic purity claim for the number to be interpretable by a third party.",
+  "fields": [
+    {
+      "code": "RP.01",
+      "field": "Column chemistry and dimensions",
+      "typical_value": "C18, 4.6 x 250 mm, 5 um (or stated equivalent)",
+      "why_it_matters": "Without it, retention and selectivity cannot be compared between laboratories."
+    },
+    {
+      "code": "RP.02",
+      "field": "Mobile phase composition (A/B)",
+      "typical_value": "0.1% TFA in water / 0.1% TFA in acetonitrile",
+      "why_it_matters": "Ion-pairing choice shifts elution order; different systems are not interchangeable."
+    },
+    {
+      "code": "RP.03",
+      "field": "Gradient profile",
+      "typical_value": "e.g. 5-65% B over 30 min, linear",
+      "why_it_matters": "A percentage without a ramp time is not a method."
+    },
+    {
+      "code": "RP.04",
+      "field": "Detection wavelength",
+      "typical_value": "220 nm (peptide backbone)",
+      "why_it_matters": "Amide absorbance varies by sequence; a different wavelength changes the reported purity."
+    },
+    {
+      "code": "RP.05",
+      "field": "Flow rate and column temperature",
+      "typical_value": "1.0 mL/min, 25 C",
+      "why_it_matters": "Both affect resolution and therefore the integration baseline."
+    },
+    {
+      "code": "RP.06",
+      "field": "Run time / total acquisition",
+      "typical_value": "35 min (30 min gradient + rinse/re-equilibration)",
+      "why_it_matters": "Truncated runs hide late-eluting impurities."
+    },
+    {
+      "code": "RP.07",
+      "field": "Injection volume and sample concentration",
+      "typical_value": "e.g. 10 uL of 1 mg/mL",
+      "why_it_matters": "Overloaded injections distort area-% in both directions."
+    },
+    {
+      "code": "RP.08",
+      "field": "Integration threshold and baseline rule",
+      "typical_value": "e.g. ignore <0.05 area-%",
+      "why_it_matters": "The reporting threshold determines the number that gets quoted."
+    },
+    {
+      "code": "RP.09",
+      "field": "Impurity reporting limit",
+      "typical_value": "0.05-0.10 area-% (state which)",
+      "why_it_matters": "Unstated limits make two '99%' claims incomparable."
+    },
+    {
+      "code": "RP.10",
+      "field": "Detector linearity / system suitability data",
+      "typical_value": "Resolution, tailing factor, theoretical plates",
+      "why_it_matters": "Without suitability data the run is not demonstrably valid."
+    }
+  ],
+  "comparability_rules": [
+    "Two purity values are comparable only if column chemistry, wavelength, gradient, and reporting threshold are identical.",
+    "Area-% is not content: content requires an independent assay (mass balance, nitrogen, or quantitative NMR).",
+    "A single main-peak percentage does not describe the impurity profile; the reporting limit sets what is visible.",
+    "Cumulative impurity reporting ('other peaks total') is more informative than the main-peak figure alone."
+  ],
+  "common_failure_modes": [
+    "Wavelength omitted, then two suppliers report different purities for the same material.",
+    "Gradient stated as a final percentage without a ramp time.",
+    "Purity quoted to 0.1% while the reporting limit is 1.0%.",
+    "Different lots compared across two different methods."
+  ]
+}
