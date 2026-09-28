@@ -14,7 +14,11 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(os.path.dirname(HERE), "out")
 API = "https://zenodo.org/api"
-TOKEN_FILE = os.path.expanduser("~/.hermes/cache/scratch/zen/token.env")
+# token 查找顺序：环境变量 → 持久目录 → 临时目录（scratch 目录闲置 24h 会被清理，不能只依赖它）
+TOKEN_FILES = [
+    os.path.expanduser("~/.hermes/secrets/zenodo.env"),
+    os.path.expanduser("~/.hermes/cache/scratch/zen/token.env"),
+]
 
 RECORDS = {
     "coa-field-taxonomy": {
@@ -210,10 +214,18 @@ def preflight(spec):
 
 
 def token():
-    for line in open(TOKEN_FILE, encoding="utf-8"):
-        if line.startswith("ZENODO_TOKEN="):
-            return line.split("=", 1)[1].strip()
-    raise SystemExit("找不到 ZENODO_TOKEN")
+    env = os.environ.get("ZENODO_TOKEN")
+    if env:
+        return env.strip()
+    for path in TOKEN_FILES:
+        if not os.path.exists(path):
+            continue
+        for line in open(path, encoding="utf-8"):
+            if line.startswith("ZENODO_TOKEN="):
+                val = line.split("=", 1)[1].strip()
+                if val:
+                    return val
+    raise SystemExit("找不到 ZENODO_TOKEN（查过环境变量与 %s）" % ", ".join(TOKEN_FILES))
 
 
 def call(method, path, tok, data=None, raw=None, ctype="application/json"):

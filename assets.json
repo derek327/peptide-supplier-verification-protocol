@@ -3,6 +3,20 @@
  "assets": [
   {
    "kind": "zenodo",
+   "name": "W6 temperature excursion MKT tables",
+   "record_id": "23005489",
+   "url": "https://zenodo.org/records/23005489",
+   "doi": "10.5281/zenodo.23005489",
+   "published": "2026-09-28",
+   "targets": [
+    "https://helixgmppeptides.com/coa-guide",
+    "https://helixpeptidesupply.com/catalog"
+   ],
+   "link_verified": "2026-09-28",
+   "link_verified_how": "浏览器抽查：正文 description 2 条 + Related works 2 条我站锚点，rel 均为 none（dofollow）；3 个文件在档（2595/965/1164 B）"
+  },
+  {
+   "kind": "zenodo",
    "name": "CoA Field Taxonomy v1.0",
    "record_id": "22962991",
    "url": "https://zenodo.org/records/22962991",
