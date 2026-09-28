@@ -1,0 +1,6 @@
+code,condition,penalty_points
+P1,Declared molecular weight differs from sequence-derived value by more than 1.0 Da,20
+P2,Chromatographic purity reported without method or wavelength,10
+P3,Batch number on the CoA cannot be matched to the shipped label,30
+P4,Mass spectrum shown without observed/theoretical comparison,10
+P5,Testing laboratory not named,15

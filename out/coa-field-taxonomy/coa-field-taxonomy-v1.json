@@ -1,0 +1,295 @@
+{
+  "schema_version": "1.0",
+  "name": "Research Peptide Certificate of Analysis (CoA) Field Taxonomy",
+  "purpose": "A machine-readable coding scheme for the fields that appear on a research-grade peptide Certificate of Analysis (CoA). Used to normalise CoA documents for procurement review, to score documentation completeness, and to feed automated extraction.",
+  "conventions": {
+    "required": "field must be present on a buyer-grade CoA",
+    "recommended": "field materially affects the buyer's ability to verify identity/purity",
+    "optional": "field is informative but not decision-critical",
+    "units": "SI where applicable; ppm for elemental/water content; % as area-% for chromatographic purity and mass-% for assay"
+  },
+  "sections": [
+    {
+      "id": "S1",
+      "name": "Product identity",
+      "fields": [
+        {
+          "code": "S1.01",
+          "label": "Product name",
+          "required": true,
+          "units": null,
+          "notes": "Trivial name plus systematic/INN where one exists."
+        },
+        {
+          "code": "S1.02",
+          "label": "Sequence",
+          "required": true,
+          "units": null,
+          "notes": "One-letter code; note D-amino acids, N-terminal acetylation and C-terminal amidation explicitly."
+        },
+        {
+          "code": "S1.03",
+          "label": "Molecular formula",
+          "required": true,
+          "units": null,
+          "notes": "Must include counter-ion and hydration state where known."
+        },
+        {
+          "code": "S1.04",
+          "label": "Molecular weight (monoisotopic)",
+          "required": true,
+          "units": "Da",
+          "notes": "Distinguish monoisotopic from average."
+        },
+        {
+          "code": "S1.05",
+          "label": "Molecular weight (average)",
+          "required": false,
+          "units": "Da"
+        },
+        {
+          "code": "S1.06",
+          "label": "CAS / catalog number",
+          "required": false,
+          "units": null
+        },
+        {
+          "code": "S1.07",
+          "label": "Salt / counter-ion form",
+          "required": true,
+          "units": null,
+          "notes": "e.g. acetate, TFA, hydrochloride. TFA content changes both mass and biological comparability."
+        },
+        {
+          "code": "S1.08",
+          "label": "Batch / lot number",
+          "required": true,
+          "units": null,
+          "notes": "Must be traceable to the testing report."
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "Purity and assay",
+      "fields": [
+        {
+          "code": "S2.01",
+          "label": "Chromatographic purity",
+          "required": true,
+          "units": "area-%",
+          "notes": "State the detection wavelength and method; area-% is not the same as content."
+        },
+        {
+          "code": "S2.02",
+          "label": "Purity method",
+          "required": true,
+          "units": null,
+          "notes": "Column, gradient, wavelength, run time."
+        },
+        {
+          "code": "S2.03",
+          "label": "Assay / content",
+          "required": false,
+          "units": "mass-%",
+          "notes": "Mass balance basis for the declared quantity."
+        },
+        {
+          "code": "S2.04",
+          "label": "Impurity profile",
+          "required": false,
+          "units": "area-%",
+          "notes": "Individual named impurities above the reporting threshold."
+        },
+        {
+          "code": "S2.05",
+          "label": "Related substances / deletion peptides",
+          "required": false,
+          "units": "area-%"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "Identity confirmation",
+      "fields": [
+        {
+          "code": "S3.01",
+          "label": "Mass spectrometry result",
+          "required": true,
+          "units": "m/z or Da",
+          "notes": "Observed vs theoretical; include the ion mode."
+        },
+        {
+          "code": "S3.02",
+          "label": "MS method",
+          "required": true,
+          "units": null,
+          "notes": "e.g. ESI-LCMS, MALDI-TOF."
+        },
+        {
+          "code": "S3.03",
+          "label": "Amino acid analysis",
+          "required": false,
+          "units": "mol-%"
+        },
+        {
+          "code": "S3.04",
+          "label": "Peptide content (elemental / nitrogen)",
+          "required": false,
+          "units": "mass-%"
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "Residuals and safety",
+      "fields": [
+        {
+          "code": "S4.01",
+          "label": "Residual solvents",
+          "required": false,
+          "units": "ppm",
+          "notes": "Where applicable to the synthesis route."
+        },
+        {
+          "code": "S4.02",
+          "label": "Trifluoroacetic acid (TFA) content",
+          "required": false,
+          "units": "%",
+          "notes": "Relevant when the salt form matters for downstream assay."
+        },
+        {
+          "code": "S4.03",
+          "label": "Water content (Karl Fischer)",
+          "required": false,
+          "units": "%"
+        },
+        {
+          "code": "S4.04",
+          "label": "Heavy metals",
+          "required": false,
+          "units": "ppm"
+        },
+        {
+          "code": "S4.05",
+          "label": "Microbial limits",
+          "required": false,
+          "units": "CFU/g"
+        },
+        {
+          "code": "S4.06",
+          "label": "Endotoxin",
+          "required": false,
+          "units": "EU/mg"
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "Storage, handling and traceability",
+      "fields": [
+        {
+          "code": "S5.01",
+          "label": "Storage conditions",
+          "required": true,
+          "units": null,
+          "notes": "Temperature and light protection; state whether lyophilised or in solution."
+        },
+        {
+          "code": "S5.02",
+          "label": "Retest / expiry date",
+          "required": true,
+          "units": null
+        },
+        {
+          "code": "S5.03",
+          "label": "Appearance",
+          "required": false,
+          "units": null
+        },
+        {
+          "code": "S5.04",
+          "label": "Solubility guidance",
+          "required": false,
+          "units": null
+        },
+        {
+          "code": "S5.05",
+          "label": "Testing laboratory",
+          "required": true,
+          "units": null,
+          "notes": "Name and, where available, accreditation or registration identifier."
+        },
+        {
+          "code": "S5.06",
+          "label": "Report identifier / date of analysis",
+          "required": true,
+          "units": null
+        },
+        {
+          "code": "S5.07",
+          "label": "Authorised signature",
+          "required": true,
+          "units": null
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "method": "Count required fields present / total required fields, then subtract penalties for internal inconsistency.",
+    "penalties": [
+      {
+        "code": "P1",
+        "condition": "Declared molecular weight differs from sequence-derived value by more than 1.0 Da",
+        "penalty": 20
+      },
+      {
+        "code": "P2",
+        "condition": "Chromatographic purity reported without method or wavelength",
+        "penalty": 10
+      },
+      {
+        "code": "P3",
+        "condition": "Batch number on the CoA cannot be matched to the shipped label",
+        "penalty": 30
+      },
+      {
+        "code": "P4",
+        "condition": "Mass spectrum shown without observed/theoretical comparison",
+        "penalty": 10
+      },
+      {
+        "code": "P5",
+        "condition": "Testing laboratory not named",
+        "penalty": 15
+      }
+    ],
+    "bands": [
+      {
+        "range": "90-100",
+        "interpretation": "Auditable documentation; suitable for institutional procurement files."
+      },
+      {
+        "range": "70-89",
+        "interpretation": "Usable, with named gaps to request before release."
+      },
+      {
+        "range": "50-69",
+        "interpretation": "Incomplete; request a re-issued CoA for the specific batch."
+      },
+      {
+        "range": "0-49",
+        "interpretation": "Not verifiable from documentation alone; treat as unconfirmed."
+      }
+    ]
+  },
+  "common_omissions": [
+    "Method parameters for the purity determination (column, gradient, wavelength)",
+    "Observed vs theoretical mass in the MS section",
+    "Salt / counter-ion form, which changes both mass and assay interpretation",
+    "Named testing laboratory and report identifier",
+    "Batch-level traceability between the CoA, the label and the shipment",
+    "Karl Fischer water content, which affects net peptide content in lyophilised powder"
+  ]
+}

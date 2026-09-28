@@ -1,0 +1,19 @@
+declared_product_band,peak_temp_c,duration_outside_band_h,documentation_action
++2 to +8 C product,< 15,<= 2,"record, release"
++2 to +8 C product,< 15,2-24,"record, release"
++2 to +8 C product,< 15,> 24,"record, quarantine, request analytical re-check"
++2 to +8 C product,15-25,<= 2,"record, release"
++2 to +8 C product,15-25,2-24,"record, quarantine"
++2 to +8 C product,15-25,> 24,"quarantine, request re-check + replacement assessment"
++2 to +8 C product,> 25,<= 2,quarantine
++2 to +8 C product,> 25,2-24,quarantine
++2 to +8 C product,> 25,> 24,reject on documentation grounds
+-20 C product,< 0,<= 2,"record, release"
+-20 C product,< 0,2-24,"record, release"
+-20 C product,< 0,> 24,"record, release"
+-20 C product,0-25,<= 2,"record, quarantine"
+-20 C product,0-25,2-24,"quarantine, re-check"
+-20 C product,0-25,> 24,reject on documentation grounds
+-20 C product,> 25,<= 2,quarantine
+-20 C product,> 25,2-24,reject
+-20 C product,> 25,> 24,reject

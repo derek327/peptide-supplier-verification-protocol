@@ -10,7 +10,9 @@ import json
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "out")
+ROOT = os.path.dirname(HERE)
+OUT = os.path.join(ROOT, "out")
+DATASETS = os.path.join(ROOT, "datasets")
 
 # 每个记录链接的真实页面（已验证 200）
 LINKS = {
@@ -27,7 +29,7 @@ LINKS = {
 def build_coa_taxonomy():
     d = os.path.join(OUT, "coa-field-taxonomy")
     os.makedirs(d, exist_ok=True)
-    src = os.path.join(HERE, "datasets", "coa-field-taxonomy-v1.json")
+    src = os.path.join(DATASETS, "coa-field-taxonomy-v1.json")
     tax = json.load(open(src, encoding="utf-8"))
 
     # JSON 副本
@@ -195,8 +197,185 @@ CC BY 4.0
     return d, len(rows)
 
 
+def mkt(profile, dH_kj):
+    """Mean kinetic temperature of a [(temp_C, hours), ...] profile."""
+    import math
+    R = 8.314462618
+    dH = dH_kj * 1000.0
+    num = 0.0
+    den = 0.0
+    for temp_c, hours in profile:
+        k = temp_c + 273.15
+        num += math.exp(-dH / (R * k)) * hours
+        den += hours
+    return dH / R / (-math.log(num / den)) - 273.15
+
+
+def build_temperature_excursion():
+    """温度偏移：MKT 参考表 + 分诊矩阵（全部由公式算出，无实测/拟合数据）"""
+    import csv as _csv
+    d = os.path.join(OUT, "temperature-excursion-mkt")
+    os.makedirs(d, exist_ok=True)
+
+    BASE_H = 48.0          # 运输时长 48 h
+    band = (2.0, 8.0)      # 声明运输温度带
+    profiles = [
+        # (id, base_C, exc_C, exc_h)
+        ("C01", 5.0, None, 0.0),
+        ("C02", 5.0, 10.0, 6.0),
+        ("C03", 5.0, 15.0, 1.0),
+        ("C04", 5.0, 15.0, 6.0),
+        ("C05", 5.0, 15.0, 24.0),
+        ("C06", 5.0, 22.0, 1.0),
+        ("C07", 5.0, 22.0, 6.0),
+        ("C08", 5.0, 22.0, 24.0),
+        ("C09", 5.0, 22.0, 48.0),
+        ("C10", 5.0, 30.0, 1.0),
+        ("C11", 5.0, 30.0, 6.0),
+        ("C12", 5.0, 30.0, 24.0),
+        ("C13", 5.0, 40.0, 1.0),
+        ("C14", 5.0, 40.0, 6.0),
+        ("F01", -20.0, None, 0.0),
+        ("F02", -20.0, -5.0, 6.0),
+        ("F03", -20.0, 0.0, 6.0),
+        ("F04", -20.0, 5.0, 2.0),
+        ("F05", -20.0, 5.0, 24.0),
+        ("F06", -20.0, 22.0, 2.0),
+        ("F07", -20.0, 22.0, 24.0),
+        ("F08", -20.0, 30.0, 6.0),
+        ("F09", 5.0, -10.0, 6.0),
+        ("F10", 5.0, -20.0, 24.0),
+    ]
+
+    rows = []
+    for pid, base, exc, exc_h in profiles:
+        prof = [(base, BASE_H - exc_h)]
+        if exc is not None and exc_h:
+            prof.append((exc, exc_h))
+        temps = [t for t, _ in prof]
+        oob = sum(h for t, h in prof if not (band[0] <= t <= band[1]))
+        mean = sum(t * h for t, h in prof) / BASE_H
+        rows.append({
+            "profile_id": pid,
+            "base_temp_c": f"{base:g}",
+            "excursion_temp_c": "" if exc is None else f"{exc:g}",
+            "excursion_hours": f"{exc_h:g}",
+            "total_hours": f"{BASE_H:g}",
+            "max_temp_c": f"{max(temps):g}",
+            "min_temp_c": f"{min(temps):g}",
+            "arithmetic_mean_c": f"{mean:.2f}",
+            "mkt_dH83_144_kJ_mol_c": f"{mkt(prof, 83.144):.2f}",
+            "mkt_dH62_8_kJ_mol_c": f"{mkt(prof, 62.8):.2f}",
+            "hours_outside_2_8_band": f"{oob:g}",
+        })
+
+    with open(os.path.join(d, "mkt-reference.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = _csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+    # 分诊矩阵（与协议文档同表）
+    triage = [
+        ("+2 to +8 C product", "< 15", "<= 2", "record, release"),
+        ("+2 to +8 C product", "< 15", "2-24", "record, release"),
+        ("+2 to +8 C product", "< 15", "> 24", "record, quarantine, request analytical re-check"),
+        ("+2 to +8 C product", "15-25", "<= 2", "record, release"),
+        ("+2 to +8 C product", "15-25", "2-24", "record, quarantine"),
+        ("+2 to +8 C product", "15-25", "> 24", "quarantine, request re-check + replacement assessment"),
+        ("+2 to +8 C product", "> 25", "<= 2", "quarantine"),
+        ("+2 to +8 C product", "> 25", "2-24", "quarantine"),
+        ("+2 to +8 C product", "> 25", "> 24", "reject on documentation grounds"),
+        ("-20 C product", "< 0", "<= 2", "record, release"),
+        ("-20 C product", "< 0", "2-24", "record, release"),
+        ("-20 C product", "< 0", "> 24", "record, release"),
+        ("-20 C product", "0-25", "<= 2", "record, quarantine"),
+        ("-20 C product", "0-25", "2-24", "quarantine, re-check"),
+        ("-20 C product", "0-25", "> 24", "reject on documentation grounds"),
+        ("-20 C product", "> 25", "<= 2", "quarantine"),
+        ("-20 C product", "> 25", "2-24", "reject"),
+        ("-20 C product", "> 25", "> 24", "reject"),
+    ]
+    with open(os.path.join(d, "excursion-triage-matrix.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = _csv.DictWriter(fh, fieldnames=["declared_product_band", "peak_temp_c",
+                                            "duration_outside_band_h", "documentation_action"])
+        w.writeheader()
+        for decl, peak, dur, act in triage:
+            w.writerow({"declared_product_band": decl, "peak_temp_c": peak,
+                        "duration_outside_band_h": dur, "documentation_action": act})
+
+    # 常识自检（纯算术，跑不过就不出版）
+    const = mkt([(5.0, 48.0)], 83.144)
+    assert abs(const - 5.0) < 1e-6, const
+    spike = next(r for r in rows if r["profile_id"] == "C12")
+    assert float(spike["mkt_dH83_144_kJ_mol_c"]) > float(spike["arithmetic_mean_c"]), spike
+    warm_dh_hi = next(r for r in rows if r["profile_id"] == "C11")
+    assert float(warm_dh_hi["mkt_dH83_144_kJ_mol_c"]) != float(warm_dh_hi["mkt_dH62_8_kJ_mol_c"])
+
+    readme = f"""# Temperature Excursion Reference Tables: MKT Profiles and Triage Matrix
+
+Deterministic reference tables for reviewing a shipment temperature trace against a declared
++2 to +8 &deg;C transport range. Every number is computed from the formulas below and a stated
+activation energy &mdash; no observed, fitted or measured data is involved, so every row can be
+regenerated exactly.
+
+## Contents
+
+| File | Description |
+|---|---|
+| `mkt-reference.csv` | {len(rows)} profiles (48 h transit: a baseline temperature plus one excursion of stated magnitude and duration), with max/min recorded temperature, arithmetic mean, mean kinetic temperature at two activation energies, and hours outside the +2 to +8 &deg;C band |
+| `excursion-triage-matrix.csv` | {len(triage)} rows: declared product band x peak temperature x duration outside band, mapped to a documentation action |
+
+## Formulas
+
+```
+MKT = (dH / R) / ( -ln( SUM( exp(-dH/(R*Ti)) * dti ) / SUM(dti) ) )
+
+dH        assumed activation energy: 83.144 kJ/mol (conventional) or 62.8 kJ/mol
+R         8.314462618 J/(mol*K)
+Ti        interval temperature, kelvin
+dti       interval duration, hours
+```
+
+Invariance checks applied before publication: a constant-temperature profile returns that
+temperature exactly; a hot spike raises MKT above the arithmetic mean; changing dH changes
+MKT.
+
+## What these tables do not say
+
+- They describe arithmetic only. They are not storage instructions, dosing guidance or
+  clinical information, and they say nothing about any specific peptide.
+- **MKT hides peaks.** A one-hour excursion to 40 &deg;C can produce the same MKT as a flat
+  profile. Always report maximum recorded temperature and duration outside band next to MKT.
+- **The activation energy is a modelling assumption, not a measured property.** Two
+  laboratories using different dH values disagree on MKT for the same trace; state which was
+  used. The two columns here exist to make that sensitivity visible.
+- Whether a molecule changed (aggregation, oxidation, deamidation, moisture uptake) is an
+  assay question. These tables cannot answer it and do not claim to.
+- For an illustrated triage walkthrough and the full documentation file specification, see
+  the companion protocol document in this repository.
+
+## Related documentation
+
+- GMP-oriented quality documentation and CoA guidance: {LINKS['gmp']}
+- Catalog and shipping documentation: {LINKS['supply']}
+
+## Citation
+
+Cite the DOI of this record, including the dH value used. Recomputation from the formulas
+above reproduces every row.
+
+## License
+
+CC BY 4.0
+"""
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+    return d, len(rows), len(triage)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     d2, n = build_reconstitution_tables()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
     print(f"reconstitution-tables: {n} 行 → {d2}")
+    d3, m, t = build_temperature_excursion()
+    print(f"temperature-excursion-mkt: {m} 剖面 + {t} 分诊行 → {d3}")

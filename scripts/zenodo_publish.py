@@ -12,7 +12,7 @@ import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "out")
+OUT = os.path.join(os.path.dirname(HERE), "out")
 API = "https://zenodo.org/api"
 TOKEN_FILE = os.path.expanduser("~/.hermes/cache/scratch/zen/token.env")
 
@@ -153,7 +153,60 @@ RECORDS = {
         "version": "1.0",
         "dir": "hplc-purity-reporting",
     },
+    "temperature-excursion-mkt": {
+        "title": "Shipment Temperature Excursion Reference Tables: MKT Profiles and Triage Matrix",
+        "description": (
+            "<p>Deterministic reference tables for reviewing a shipment temperature log against a "
+            "declared +2 to +8&nbsp;&deg;C transport range. Two data files are provided: 24 "
+            "transport profiles (each a 48&nbsp;h baseline temperature plus one excursion of "
+            "stated magnitude and duration) with mean kinetic temperature computed at two "
+            "activation energies, and an 18-row triage matrix mapping declared product band "
+            "&times; peak temperature &times; duration outside band to a documentation action.</p>"
+            "<p>Every value is computed from the published MKT formula and a stated activation "
+            "energy (83.144 and 62.8&nbsp;kJ/mol) &mdash; no measured or fitted data is involved, "
+            "so the tables can be regenerated exactly. Invariance checks applied before release: "
+            "a constant-temperature profile returns that temperature exactly, and a hot spike "
+            "raises MKT above the arithmetic mean.</p>"
+            "<p>The README states plainly what the numbers do not support: MKT hides peaks, the "
+            "activation energy is a modelling assumption rather than a measured property, and "
+            "whether a molecule changed is an assay question that these tables cannot answer.</p>"
+            "<p>The triage walkthrough and the full excursion documentation file specification: "
+            "<a href=\"https://helixgmppeptides.com/coa-guide\">helixgmppeptides.com/coa-guide</a>. "
+            "Catalog and shipping documentation: "
+            "<a href=\"https://helixpeptidesupply.com/catalog\">helixpeptidesupply.com/catalog</a>.</p>"
+        ),
+        "creator": "Helix GMP Peptides",
+        "affiliation": "Helix GMP Peptides (quality documentation)",
+        "keywords": [
+            "cold chain", "temperature excursion", "mean kinetic temperature", "MKT",
+            "shipping documentation", "peptide handling", "quality documentation", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://helixgmppeptides.com/coa-guide", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://helixpeptidesupply.com/catalog", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": "All values are exact functions of the stated profile and activation energy; see README formulas.",
+        "version": "1.0",
+        "dir": "temperature-excursion-mkt",
+    },
 }
+
+
+def preflight(spec):
+    """铁律自检：缺锚点/缺 publisher/related 格式不对，直接拒绝提交（避免白做一波）"""
+    problems = []
+    if not spec.get("creator"):
+        problems.append("缺 creator（脚本用 creator 填 publisher，缺则 400）")
+    if '<a href="' not in spec.get("description", ""):
+        problems.append("description 里没有 <a href> 锚点（正文链接不会渲染）")
+    for r in spec.get("related", []):
+        if "relation" not in r or not isinstance(r.get("resource_type"), dict):
+            problems.append(f"related_identifiers 旧格式: {r.get('identifier')}")
+    if not spec.get("dir"):
+        problems.append("缺 dir")
+    return problems
 
 
 def token():
@@ -181,6 +234,12 @@ def call(method, path, tok, data=None, raw=None, ctype="application/json"):
 
 def publish(key, dry=False):
     spec = RECORDS[key]
+    problems = preflight(spec)
+    if problems:
+        print(f"[{key}] ❌ 铁律自检未通过，拒绝提交：")
+        for p in problems:
+            print(f"   - {p}")
+        return None
     directory = os.path.join(OUT, spec["dir"])
     if not os.path.isdir(directory):
         raise SystemExit(f"目录不存在: {directory}")
