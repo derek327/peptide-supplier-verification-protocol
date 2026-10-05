@@ -1,0 +1,13 @@
+sample_id,peptide,free_peptide_molar_mass_g_per_mol,label_mass_mg,hplc_area_pct,water_pct_kf,counterion,counterion_pct,other_nonpeptide_pct,peptide_content_pct_as_is,net_peptide_mg,umol_if_label_taken_as_peptide,umol_after_content_correction,overstatement_factor
+P01,GHK (free peptide),340.38,10,99.5,2.0,none,0.0,0.0,97.51,9.751,29.379,28.647,1.026
+P02,GHK (free peptide),340.38,10,99.5,4.0,none,0.0,0.0,95.52,9.552,29.379,28.063,1.047
+P03,BPC-157,1419.53,10,98.0,5.0,acetate,6.0,0.5,86.73,8.673,7.045,6.110,1.153
+P04,BPC-157,1419.53,10,98.0,6.0,acetate,8.0,0.5,83.79,8.379,7.045,5.903,1.193
+P05,BPC-157,1419.53,10,97.0,8.0,TFA,10.0,1.0,78.57,7.857,7.045,5.535,1.273
+P06,Semaglutide,4113.58,10,95.0,5.0,acetate,6.0,0.5,84.08,8.408,2.431,2.044,1.189
+P07,Semaglutide,4113.58,10,92.0,5.0,acetate,6.0,0.5,81.42,8.142,2.431,1.979,1.228
+P08,Retatrutide,4731.30,10,99.0,0.5,none,0.0,0.0,98.50,9.851,2.114,2.082,1.015
+P09,Tirzepatide,4813.51,10,99.0,3.0,TFA,12.0,0.0,84.15,8.415,2.077,1.748,1.188
+P10,Tirzepatide,4813.51,10,99.0,10.0,none,0.0,0.0,89.10,8.910,2.077,1.851,1.122
+P11,reference peptide,1000.00,10,90.0,10.0,TFA,10.0,2.0,70.20,7.020,10.000,7.020,1.425
+P12,reference peptide,1000.00,10,98.5,3.0,acetate,4.0,0.2,91.41,9.141,10.000,9.141,1.094

@@ -195,6 +195,46 @@ RECORDS = {
         "version": "1.0",
         "dir": "temperature-excursion-mkt",
     },
+    "purity-content-math": {
+        "title": "Purity vs Peptide Content: Net-Peptide Mass and Mass-Balance Reference Tables",
+        "description": (
+            "<p>Deterministic reference tables for the arithmetic that relates a chromatographic "
+            "purity figure (area-%) to the net peptide in a weighed research-peptide sample. Two "
+            "data files and one script are provided: 12 samples at 10&nbsp;mg label mass across "
+            "free-base, acetate and trifluoroacetate forms with water content, counterion content "
+            "and the resulting peptide content as-is, a sensitivity table crossing fixed purity "
+            "with water content from 0 to 12&nbsp;%, and a command-line calculator with a "
+            "self-test.</p>"
+            "<p>All values are computed from two published relations and the stated inputs "
+            "&mdash; no measured or fitted data is involved, so the tables can be regenerated "
+            "exactly. Invariance checks applied before release: a material at 100&nbsp;% purity "
+            "with no water or counterion returns exactly 100&nbsp;% content, content falls "
+            "strictly as water rises, and no row yields more peptide than the label mass, so the "
+            "overstatement factor exceeds one throughout.</p>"
+            "<p>The README states plainly what the numbers do not support: the multiplicative "
+            "model is a review estimate rather than an assay, area-% is not content, counterion "
+            "stoichiometry need not be one-to-one, and water content moves with handling.</p>"
+            "<p>Quality documentation structure and the review workflow this work supports: "
+            "<a href=\"https://gethelixpeptide.com/quality\">gethelixpeptide.com/quality</a>. "
+            "Product-level documentation and batch records: "
+            "<a href=\"https://gethelixpeptide.com/products\">gethelixpeptide.com/products</a>.</p>"
+        ),
+        "creator": "Helix Peptide Research",
+        "affiliation": "Helix Peptide Research (research peptide documentation)",
+        "keywords": [
+            "peptide content", "HPLC purity", "mass balance", "Karl Fischer",
+            "counterion", "trifluoroacetate", "documentation review", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://gethelixpeptide.com/quality", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://gethelixpeptide.com/products", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": "All values are exact functions of the stated inputs; see README formulas.",
+        "version": "1.0",
+        "dir": "purity-content-math",
+    },
 }
 
 

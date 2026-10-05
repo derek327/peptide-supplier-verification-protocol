@@ -372,10 +372,227 @@ CC BY 4.0
     return d, len(rows), len(triage)
 
 
+def build_purity_content_math():
+    """纯度 vs 肽净含量：质量平衡换算表 + 含水量敏感性表 + 可复算脚本。
+
+    全部由输入参数经公式算出，无实测/拟合数据；出版前做不变量自检。
+    """
+    d = os.path.join(OUT, "purity-content-math")
+    os.makedirs(d, exist_ok=True)
+
+    LABEL_MG = 10.0
+    # (id, peptide, free-peptide molar mass g/mol, area-%, water-%, counterion-%, counterion, other non-peptide %)
+    samples = [
+        ("P01", "GHK (free peptide)",   340.38, 99.5, 2.0,  0.0,  "none",     0.0),
+        ("P02", "GHK (free peptide)",   340.38, 99.5, 4.0,  0.0,  "none",     0.0),
+        ("P03", "BPC-157",             1419.53, 98.0, 5.0,  6.0,  "acetate",  0.5),
+        ("P04", "BPC-157",             1419.53, 98.0, 6.0,  8.0,  "acetate",  0.5),
+        ("P05", "BPC-157",             1419.53, 97.0, 8.0, 10.0,  "TFA",      1.0),
+        ("P06", "Semaglutide",         4113.58, 95.0, 5.0,  6.0,  "acetate",  0.5),
+        ("P07", "Semaglutide",         4113.58, 92.0, 5.0,  6.0,  "acetate",  0.5),
+        ("P08", "Retatrutide",         4731.30, 99.0, 0.5,  0.0,  "none",     0.0),
+        ("P09", "Tirzepatide",         4813.51, 99.0, 3.0, 12.0,  "TFA",      0.0),
+        ("P10", "Tirzepatide",         4813.51, 99.0, 10.0, 0.0,  "none",     0.0),
+        ("P11", "reference peptide",   1000.00, 90.0, 10.0, 10.0, "TFA",      2.0),
+        ("P12", "reference peptide",   1000.00, 98.5, 3.0,  4.0,  "acetate",  0.2),
+    ]
+
+    def content_pct(purity, water, counterion, other):
+        return purity * (100.0 - water - counterion - other) / 100.0
+
+    rows = []
+    for sid, name, mw, purity, water, ci, ci_name, other in samples:
+        content = content_pct(purity, water, ci, other)
+        net_mg = LABEL_MG * content / 100.0
+        naive_umol = (LABEL_MG / 1000.0) / mw * 1e6
+        corr_umol = (net_mg / 1000.0) / mw * 1e6
+        rows.append({
+            "sample_id": sid,
+            "peptide": name,
+            "free_peptide_molar_mass_g_per_mol": f"{mw:.2f}",
+            "label_mass_mg": f"{LABEL_MG:g}",
+            "hplc_area_pct": f"{purity:.1f}",
+            "water_pct_kf": f"{water:.1f}",
+            "counterion": ci_name,
+            "counterion_pct": f"{ci:.1f}",
+            "other_nonpeptide_pct": f"{other:.1f}",
+            "peptide_content_pct_as_is": f"{content:.2f}",
+            "net_peptide_mg": f"{net_mg:.3f}",
+            "umol_if_label_taken_as_peptide": f"{naive_umol:.3f}",
+            "umol_after_content_correction": f"{corr_umol:.3f}",
+            "overstatement_factor": f"{naive_umol / corr_umol:.3f}",
+        })
+
+    with open(os.path.join(d, "net-peptide-content.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+    # 含水量敏感性：固定纯度 98.0 %、无抗衡离子，含水量 0→12 %
+    sens = []
+    for water in [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0]:
+        content = content_pct(98.0, water, 0.0, 0.0)
+        sens.append({
+            "water_pct_kf": f"{water:.1f}",
+            "hplc_area_pct": "98.0",
+            "peptide_content_pct_as_is": f"{content:.2f}",
+            "net_peptide_mg_per_10mg_label": f"{LABEL_MG * content / 100.0:.3f}",
+        })
+    with open(os.path.join(d, "content-vs-water.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(sens[0].keys()))
+        w.writeheader()
+        w.writerows(sens)
+
+    # 出版前不变量自检（跑不过就不产出）
+    assert abs(content_pct(100.0, 0.0, 0.0, 0.0) - 100.0) < 1e-9
+    assert abs(content_pct(99.0, 0.5, 0.0, 0.0) - 98.505) < 1e-9
+    contents = [float(r["peptide_content_pct_as_is"]) for r in sens]
+    assert all(b < a for a, b in zip(contents, contents[1:])), contents
+    for r in rows:
+        assert float(r["net_peptide_mg"]) < LABEL_MG
+        assert float(r["overstatement_factor"]) > 1.0
+        assert abs(round(float(r["peptide_content_pct_as_is"]), 2)
+                   - round(content_pct(float(r["hplc_area_pct"]), float(r["water_pct_kf"]),
+                                      float(r["counterion_pct"]), float(r["other_nonpeptide_pct"])), 2)) < 1e-6
+
+    script = '''#!/usr/bin/env python3
+"""Net peptide content calculator (documentation arithmetic only).
+
+Usage:
+  python3 net_peptide_calc.py --mass 10 --purity 98 --water 5 --counterion 6 --other 0.5 --mw 1419.53
+  python3 net_peptide_calc.py --selftest
+
+content_pct    = purity_pct * (100 - water - counterion - other) / 100
+net_peptide_mg = label_mass_mg * content_pct / 100
+"""
+import argparse
+import sys
+
+LABEL_MG = 10.0
+
+
+def content_pct(purity, water, counterion, other):
+    non_peptide = water + counterion + other
+    if non_peptide < 0 or non_peptide > 100:
+        raise ValueError("non-peptide fractions must lie in 0-100 %")
+    return purity * (100.0 - non_peptide) / 100.0
+
+
+def report(mass, purity, water, counterion, other, mw):
+    content = content_pct(purity, water, counterion, other)
+    net_mg = mass * content / 100.0
+    naive = (mass / 1000.0) / mw * 1e6
+    corrected = (net_mg / 1000.0) / mw * 1e6
+    print(f"peptide content (as-is) : {content:.2f} %")
+    print(f"net peptide in {mass:g} mg label mass : {net_mg:.3f} mg")
+    print(f"umol if label mass taken as peptide  : {naive:.3f}")
+    print(f"umol after content correction        : {corrected:.3f}")
+    print(f"overstatement factor                 : {naive / corrected:.3f}")
+
+
+def selftest():
+    assert abs(content_pct(100.0, 0.0, 0.0, 0.0) - 100.0) < 1e-9
+    assert abs(content_pct(98.0, 5.0, 6.0, 0.5) - 86.73) < 1e-9
+    assert abs(content_pct(100.0, 0.0, 0.0, 0.0)) >= abs(content_pct(99.0, 10.0, 0.0, 0.0))
+    try:
+        content_pct(98.0, 60.0, 50.0, 0.0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("non-peptide sum over 100 % must raise")
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mass", type=float, default=LABEL_MG)
+    ap.add_argument("--purity", type=float)
+    ap.add_argument("--water", type=float)
+    ap.add_argument("--counterion", type=float)
+    ap.add_argument("--other", type=float, default=0.0)
+    ap.add_argument("--mw", type=float)
+    ap.add_argument("--selftest", action="store_true")
+    a = ap.parse_args()
+    if a.selftest or None in (a.purity, a.water, a.counterion, a.mw):
+        if not a.selftest:
+            print("purity / water / counterion / mw are required (or use --selftest)", file=sys.stderr)
+            sys.exit(2)
+        selftest()
+    else:
+        report(a.mass, a.purity, a.water, a.counterion, a.other, a.mw)
+'''
+    open(os.path.join(d, "net_peptide_calc.py"), "w", encoding="utf-8").write(script)
+
+    readme = f"""# Purity vs Peptide Content: Net-Peptide Mass Reference Tables
+
+Deterministic reference tables and a calculation script for the arithmetic that relates a
+chromatographic purity figure (area-%) to the net peptide in a weighed sample. Every value is
+computed from the two formulas below using the stated inputs &mdash; no observed or fitted data
+is involved, so every row can be recomputed exactly.
+
+## Contents
+
+| File | Description |
+|---|---|
+| `net-peptide-content.csv` | {len(rows)} samples (10 mg label mass) across free-base, acetate and TFA forms: purity, water by Karl Fischer, counterion and other non-peptide fractions, resulting content, net peptide mass, and the molar overstatement that results from taking the label mass as peptide |
+| `content-vs-water.csv` | {len(sens)} points: content at constant 98.0 % purity as water content runs 0 &ndash; 12 % |
+| `net_peptide_calc.py` | Command-line calculator for any input set, with a `--selftest` that checks the invariance rules below |
+
+## Formulas
+
+```
+content_pct    = purity_pct * (100 - water_pct - counterion_pct - other_nonpeptide_pct) / 100
+net_peptide_mg = label_mass_mg * content_pct / 100
+umol           = (net_peptide_mg / 1000) / molar_mass_g_per_mol * 1e6   # free-peptide molar mass
+```
+
+## Invariance checks applied before publication
+
+A material at 100 % purity with no water, counterion or other non-peptide fraction returns
+exactly 100 % content; the dry free-base case 99.0 % purity / 0.5 % water returns 98.505 %;
+content falls strictly as water content rises at constant purity; and every published row yields
+less peptide than the label mass, so the overstatement factor exceeds 1 in every case.
+
+## What these tables do not say
+
+- They describe documentation arithmetic. They are not handling, storage or dosing guidance and
+  say nothing about any specific peptide.
+- The multiplicative model assumes impurities distribute proportionally between the weighed
+  powder and the detected chromatographic peaks. It is a review estimate, **not a measured
+  content**; a stated content should come from an independent assay (quantitative NMR, amino
+  acid analysis, nitrogen determination or UV against a stated coefficient).
+- The method's reporting threshold caps the correction: a purity method that cannot see below
+  1 % cannot account for low-level related substances that still occupy mass.
+- Counterion stoichiometry is not necessarily one-to-one; a polybasic peptide may carry more
+  than one trifluoroacetate per molecule.
+- Water content is a snapshot. A hygroscopic solid takes up moisture between analysis and
+  weighing, so the correction drifts with handling.
+- Molar masses are sequence-derived values for the free peptide; counterion and water add mass,
+  which is exactly why content is measured rather than inferred from the label.
+
+## Related documentation
+
+- Quality documentation structure, specification fields and review workflow: https://gethelixpeptide.com/quality
+- Product-level documentation and batch records: {LINKS['main']}
+
+## Citation
+
+Cite the DOI of this record. Recomputation from the formulas above reproduces every row.
+
+## License
+
+CC BY 4.0
+"""
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+    return d, len(rows), len(sens)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
-    d2, n = build_reconstitution_tables()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
+    d2, n = build_reconstitution_tables()
     print(f"reconstitution-tables: {n} 行 → {d2}")
     d3, m, t = build_temperature_excursion()
     print(f"temperature-excursion-mkt: {m} 剖面 + {t} 分诊行 → {d3}")
+    d4, r4, s4 = build_purity_content_math()
+    print(f"purity-content-math: {r4} 样品 + {s4} 敏感性行 → {d4}")
