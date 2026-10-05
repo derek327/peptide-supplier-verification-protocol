@@ -3,6 +3,20 @@
  "assets": [
   {
    "kind": "zenodo",
+   "name": "W7 purity vs peptide content math",
+   "record_id": "23149984",
+   "url": "https://zenodo.org/records/23149984",
+   "doi": "10.5281/zenodo.23149984",
+   "published": "2026-10-05",
+   "targets": [
+    "https://gethelixpeptide.com/quality",
+    "https://gethelixpeptide.com/products"
+   ],
+   "link_verified": "2026-10-05",
+   "link_verified_how": "浏览器抽查：记录页 4 条我站锚点（正文 description 2 条 + Related works 2 条），rel 全为空串；全页 56 个 <a> 中 nofollow 计数 0；Publisher 行 = Helix Peptide Research；4 个文件在档（README/csv×2/calc.py）"
+  },
+  {
+   "kind": "zenodo",
    "name": "W6 temperature excursion MKT tables",
    "record_id": "23005489",
    "url": "https://zenodo.org/records/23005489",
