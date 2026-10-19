@@ -1,0 +1,7 @@
+case_id,peptide,salt_form,label_mass_mg,salt_molar_mass_g_per_mol,net_peptide_mg,umol_peptide,peptide_mg_change_vs_acetate_pct
+GHK,GHK (Gly-His-Lys),acetate,10,517.51,6.577,19.323,+0.0
+GHK,GHK (Gly-His-Lys),chloride,10,446.74,7.619,22.384,+15.8
+GHK,GHK (Gly-His-Lys),tfa,10,679.45,5.010,14.718,-23.8
+BPC157,BPC-157,acetate,10,1537.62,9.232,6.504,+0.0
+BPC157,BPC-157,chloride,10,1490.44,9.524,6.709,+3.2
+BPC157,BPC-157,tfa,10,1645.58,8.626,6.077,-6.6

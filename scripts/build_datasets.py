@@ -587,6 +587,277 @@ CC BY 4.0
     return d, len(rows), len(sens)
 
 
+COUNTERIONS = {
+    # name: (molar mass of the counterion moiety, label)
+    "none": (0.0, "free base"),
+    "acetate": (59.044, "acetate"),
+    "chloride": (35.453, "chloride"),
+    "tfa": (113.023, "trifluoroacetate"),
+}
+WATER_MW = 18.015
+
+
+def _salt_mass(peptide_mw, sites, counterion, water=0):
+    return peptide_mw + sites * COUNTERIONS[counterion][0] + water * WATER_MW
+
+
+def build_counterion_salt_forms():
+    """盐型/反离子：盐摩尔质量、肽质量分数、标签质量漂移表（纯算术，可复算）。"""
+    d = os.path.join(OUT, "counterion-salt-forms")
+    os.makedirs(d, exist_ok=True)
+
+    # (id, peptide, free-peptide molar mass, protonatable basic centres)
+    # 碱基数按序列中 N 端 + Arg/Lys/His 侧链计；盐形成条件下实际结合数由工艺决定，
+    # 表内按整数化学计量建模（见 README 局限）。
+    molecules = [
+        ("GHK", "GHK (Gly-His-Lys)", 340.38, 3),
+        ("BPC157", "BPC-157", 1419.53, 2),
+    ]
+    forms = [
+        ("free base", "none", 0, 0),
+        ("acetate", "acetate", None, 0),          # None = 按位点数满结合
+        ("chloride", "chloride", None, 0),
+        ("trifluoroacetate", "tfa", None, 0),
+        ("trifluoroacetate dihydrate", "tfa", None, 2),
+    ]
+
+    rows = []
+    for mid, name, mw, sites in molecules:
+        for form_label, ci, bound, water in forms:
+            n = 0 if ci == "none" else (sites if bound is None else bound)
+            salt_mw = _salt_mass(mw, n, ci, water)
+            frac = mw / salt_mw
+            rows.append({
+                "case_id": mid,
+                "peptide": name,
+                "free_peptide_molar_mass_g_per_mol": f"{mw:.2f}",
+                "protonatable_basic_centres": sites,
+                "salt_form": form_label,
+                "counterion": COUNTERIONS[ci][1],
+                "counterions_bound": n,
+                "water_molecules": water,
+                "salt_molar_mass_g_per_mol": f"{salt_mw:.2f}",
+                "peptide_mass_fraction_pct": f"{frac * 100:.2f}",
+                "mg_salt_per_umol_peptide": f"{salt_mw / 1000.0:.4f}",
+                "net_peptide_mg_per_10mg_label": f"{10.0 * frac:.3f}",
+            })
+    with open(os.path.join(d, "salt-form-mass-balance.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+    # 标签质量漂移：同样 10 mg 称量，换盐型后肽质量/摩尔量变化（以醋酸盐为基准）
+    drift = []
+    for mid, name, mw, sites in molecules:
+        base_peptide = 10.0 * mw / _salt_mass(mw, sites, "acetate")
+        for _, ci in (("acetate form", "acetate"), ("chloride form", "chloride"),
+                      ("TFA form", "tfa")):
+            salt_mw = _salt_mass(mw, sites, ci)
+            peptide_mg = 10.0 * mw / salt_mw
+            umol = (peptide_mg / 1000.0) / mw * 1e6
+            drift.append({
+                "case_id": mid,
+                "peptide": name,
+                "salt_form": ci,
+                "label_mass_mg": "10",
+                "salt_molar_mass_g_per_mol": f"{salt_mw:.2f}",
+                "net_peptide_mg": f"{peptide_mg:.3f}",
+                "umol_peptide": f"{umol:.3f}",
+                "peptide_mg_change_vs_acetate_pct": f"{(peptide_mg / base_peptide - 1) * 100:+.1f}",
+            })
+    with open(os.path.join(d, "label-mass-drift.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(drift[0].keys()))
+        w.writeheader()
+        w.writerows(drift)
+
+    # 位点数敏感性：同一 1200 g/mol 骨架，0-4 个位点，醋酸盐 vs TFA
+    sens = []
+    for n in range(0, 5):
+        row = {"protonatable_basic_centres": n, "free_peptide_molar_mass_g_per_mol": "1200.00"}
+        for ci in ("acetate", "tfa"):
+            salt_mw = _salt_mass(1200.0, n, ci)
+            row[f"{ci}_salt_molar_mass_g_per_mol"] = f"{salt_mw:.2f}"
+            row[f"{ci}_peptide_mass_fraction_pct"] = f"{1200.0 / salt_mw * 100:.2f}"
+        row["tfa_fraction_relative_to_acetate_pct"] = (
+            f"{(1200.0 / _salt_mass(1200.0, n, 'tfa')) / (1200.0 / _salt_mass(1200.0, n, 'acetate')) * 100:.1f}"
+        )
+        sens.append(row)
+    with open(os.path.join(d, "counterion-sensitivity.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(sens[0].keys()))
+        w.writeheader()
+        w.writerows(sens)
+
+    # 出版前不变量自检
+    assert abs(_salt_mass(340.38, 0, "none") - 340.38) < 1e-9
+    assert abs(_salt_mass(340.38, 3, "acetate") - (340.38 + 3 * 59.044)) < 1e-9
+    ghk_tfa = 340.38 / _salt_mass(340.38, 3, "tfa") * 100
+    assert 49.0 < ghk_tfa < 51.0, ghk_tfa
+    ghk_ac = 340.38 / _salt_mass(340.38, 3, "acetate") * 100
+    assert ghk_tfa < ghk_ac, (ghk_tfa, ghk_ac)
+    prev = 101.0
+    for n in range(0, 5):
+        frac = 1200.0 / _salt_mass(1200.0, n, "tfa") * 100
+        assert frac < prev, (n, frac)
+        prev = frac
+    assert all(float(r["peptide_mass_fraction_pct"]) <= 100.0 for r in rows)
+    assert all(float(r["net_peptide_mg_per_10mg_label"]) <= 10.0 for r in rows)
+    for mid, _name, _mw, _sites in molecules:
+        tfa = next(float(r["peptide_mass_fraction_pct"]) for r in rows
+                   if r["case_id"] == mid and r["salt_form"] == "trifluoroacetate")
+        di = next(float(r["peptide_mass_fraction_pct"]) for r in rows
+                  if r["case_id"] == mid and r["salt_form"] == "trifluoroacetate dihydrate")
+        assert di < tfa, (mid, di, tfa)
+    # 漂移表：TFA 在同样称量下肽质量必须低于醋酸盐，GHK 降幅应为两位数
+    ghk_drift = {r["salt_form"]: float(r["net_peptide_mg"]) for r in drift if r["case_id"] == "GHK"}
+    assert ghk_drift["tfa"] < ghk_drift["acetate"] < ghk_drift["chloride"]
+    assert abs((ghk_drift["tfa"] / ghk_drift["acetate"] - 1) * 100 + 23.7) < 1.0
+
+    script = '''#!/usr/bin/env python3
+"""Salt-form / counterion arithmetic (documentation arithmetic only).
+
+Usage:
+  python3 salt_form_calc.py --mw 340.38 --sites 3 --counterion tfa --mass 10
+  python3 salt_form_calc.py --mw 340.38 --sites 3 --counterion tfa --water 2 --mass 10
+  python3 salt_form_calc.py --selftest
+
+salt_mw               = mw + sites * counterion_mw + water * 18.015
+peptide_mass_fraction = mw / salt_mw
+net_peptide_mg        = mass * peptide_mass_fraction
+umol                  = (net_peptide_mg / 1000) / mw * 1e6
+"""
+import argparse
+import sys
+
+COUNTERIONS = {"none": 0.0, "acetate": 59.044, "chloride": 35.453, "tfa": 113.023}
+WATER_MW = 18.015
+
+
+def salt_mass(mw, sites, counterion, water=0):
+    if counterion not in COUNTERIONS:
+        raise ValueError("counterion must be one of: " + ", ".join(COUNTERIONS))
+    if sites < 0 or water < 0:
+        raise ValueError("sites and water must be non-negative")
+    return mw + sites * COUNTERIONS[counterion] + water * WATER_MW
+
+
+def report(mw, sites, counterion, water, mass):
+    sm = salt_mass(mw, sites, counterion, water)
+    frac = mw / sm
+    net = mass * frac
+    umol = (net / 1000.0) / mw * 1e6
+    print(f"salt form                 : {counterion} x {sites}, water x {water}")
+    print(f"salt molar mass           : {sm:.2f} g/mol")
+    print(f"peptide mass fraction     : {frac * 100:.2f} %")
+    print(f"net peptide in {mass:g} mg label : {net:.3f} mg")
+    print(f"molar amount              : {umol:.3f} umol")
+    print(f"mg salt per umol peptide  : {sm / 1000.0:.4f} mg")
+
+
+def selftest():
+    assert abs(salt_mass(340.38, 0, "none") - 340.38) < 1e-9
+    assert abs(salt_mass(340.38, 3, "acetate") - (340.38 + 3 * 59.044)) < 1e-9
+    assert abs(salt_mass(100.0, 1, "tfa", 2) - (100.0 + 113.023 + 2 * 18.015)) < 1e-9
+    f_acetate = 340.38 / salt_mass(340.38, 3, "acetate")
+    f_tfa = 340.38 / salt_mass(340.38, 3, "tfa")
+    assert f_tfa < f_acetate < 1.0
+    assert 0.49 < f_tfa < 0.51
+    assert 100.0 * 340.38 / salt_mass(340.38, 0, "none") == 100.0
+    try:
+        salt_mass(100.0, 1, "formate")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("unknown counterion must raise")
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mw", type=float)
+    ap.add_argument("--sites", type=int, default=0)
+    ap.add_argument("--counterion", default="none", choices=list(COUNTERIONS))
+    ap.add_argument("--water", type=int, default=0)
+    ap.add_argument("--mass", type=float, default=10.0)
+    ap.add_argument("--selftest", action="store_true")
+    a = ap.parse_args()
+    if a.selftest:
+        selftest()
+    elif a.mw is None:
+        print("--mw is required (or use --selftest)", file=sys.stderr)
+        sys.exit(2)
+    else:
+        report(a.mw, a.sites, a.counterion, a.water, a.mass)
+'''
+    open(os.path.join(d, "salt_form_calc.py"), "w", encoding="utf-8").write(script)
+
+    readme = f"""# Counterion and Salt Form: Mass-Balance Reference Tables
+
+Deterministic reference tables for the arithmetic that connects a peptide's salt form to the
+peptide mass and molar quantity in a weighed sample. Every value is computed from the formula
+below and the stated inputs &mdash; no observed or fitted data is involved, so every row can be
+regenerated exactly.
+
+## Contents
+
+| File | Description |
+|---|---|
+| `salt-form-mass-balance.csv` | {len(rows)} rows: GHK (three protonatable basic centres) and BPC-157 (two) as free base, acetate, chloride, trifluoroacetate and trifluoroacetate dihydrate &mdash; salt molar mass, peptide mass fraction, mg of salt per &micro;mol of peptide, net peptide in a 10 mg label |
+| `label-mass-drift.csv` | {len(drift)} rows: the same 10 mg weighed mass expressed as acetate, chloride and TFA, with net peptide mass, molar amount and percentage change against the acetate form |
+| `counterion-sensitivity.csv` | {len(sens)} rows: a 1200 g/mol backbone with 0&ndash;4 protonatable centres, acetate versus TFA, showing how the counterion penalty scales with charge count |
+| `salt_form_calc.py` | Command-line calculator for any input set, with a `--selftest` |
+
+## Formula
+
+```
+salt_molar_mass       = peptide_molar_mass + n * counterion_molar_mass + w * 18.015
+peptide_mass_fraction = peptide_molar_mass / salt_molar_mass
+net_peptide_mg        = weighed_mg * peptide_mass_fraction
+moles                 = (net_peptide_mg / 1000) / peptide_molar_mass
+```
+
+Counterion molar masses used: acetate 59.044, chloride 35.453, trifluoroacetate 113.023
+g/mol; water 18.015 g/mol.
+
+## Invariance checks applied before publication
+
+A free base with no bound water returns exactly 100 % peptide fraction; the salt molar mass
+equals the free peptide plus the stated counterion and water masses; the peptide fraction falls
+strictly as the number of bound counterions rises; at equal charge count the TFA fraction is
+lower than the acetate fraction; and no salt row yields more peptide than the label mass.
+The GHK tri-TFA fraction is asserted to lie between 49 and 51 %, and the TFA-versus-acetate
+peptide-mass difference for GHK to within one percentage point of 23.8 %.
+
+## What these tables do not say
+
+- They are documentation arithmetic. They are not handling, storage, analytical or dosing
+  guidance and say nothing about the behaviour of any peptide in any biological system.
+- **Integral stoichiometry is a modelling assumption.** Real materials can carry fractional or
+  mixed counterion loads, and the number bound depends on the isolation pH and ion-pairing
+  conditions. The certificate should state the actual counterion content; substitute it for
+  `n` rather than assuming the maximum.
+- The peptide molar mass must refer to the free peptide, not the salt. Using a salt molar mass
+  in the denominator double-counts the counterion.
+- Water content moves with handling. A value measured at release is a snapshot, not a constant.
+- The tables do not predict purity, stability, solubility or chromatographic behaviour; they
+  only convert a stated composition into mass and moles.
+
+## Related documentation
+
+- Catalog and product documentation: {LINKS['supply']}
+- Product-level documentation and batch records: https://helixpeptidesupply.com/products
+
+## Citation
+
+Cite the DOI of this record. Recomputation from the formula above reproduces every row.
+
+## License
+
+CC BY 4.0
+"""
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+    return d, len(rows), len(drift), len(sens)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
@@ -596,3 +867,5 @@ if __name__ == "__main__":
     print(f"temperature-excursion-mkt: {m} 剖面 + {t} 分诊行 → {d3}")
     d4, r4, s4 = build_purity_content_math()
     print(f"purity-content-math: {r4} 样品 + {s4} 敏感性行 → {d4}")
+    d5, r5, r5b, r5c = build_counterion_salt_forms()
+    print(f"counterion-salt-forms: {r5} 盐型行 + {r5b} 漂移行 + {r5c} 位点行 → {d5}")

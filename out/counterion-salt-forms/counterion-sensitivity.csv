@@ -1,0 +1,6 @@
+protonatable_basic_centres,free_peptide_molar_mass_g_per_mol,acetate_salt_molar_mass_g_per_mol,acetate_peptide_mass_fraction_pct,tfa_salt_molar_mass_g_per_mol,tfa_peptide_mass_fraction_pct,tfa_fraction_relative_to_acetate_pct
+0,1200.00,1200.00,100.00,1200.00,100.00,100.0
+1,1200.00,1259.04,95.31,1313.02,91.39,95.9
+2,1200.00,1318.09,91.04,1426.05,84.15,92.4
+3,1200.00,1377.13,87.14,1539.07,77.97,89.5
+4,1200.00,1436.18,83.56,1652.09,72.64,86.9

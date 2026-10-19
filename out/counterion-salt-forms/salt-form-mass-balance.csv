@@ -1,0 +1,11 @@
+case_id,peptide,free_peptide_molar_mass_g_per_mol,protonatable_basic_centres,salt_form,counterion,counterions_bound,water_molecules,salt_molar_mass_g_per_mol,peptide_mass_fraction_pct,mg_salt_per_umol_peptide,net_peptide_mg_per_10mg_label
+GHK,GHK (Gly-His-Lys),340.38,3,free base,free base,0,0,340.38,100.00,0.3404,10.000
+GHK,GHK (Gly-His-Lys),340.38,3,acetate,acetate,3,0,517.51,65.77,0.5175,6.577
+GHK,GHK (Gly-His-Lys),340.38,3,chloride,chloride,3,0,446.74,76.19,0.4467,7.619
+GHK,GHK (Gly-His-Lys),340.38,3,trifluoroacetate,trifluoroacetate,3,0,679.45,50.10,0.6794,5.010
+GHK,GHK (Gly-His-Lys),340.38,3,trifluoroacetate dihydrate,trifluoroacetate,3,2,715.48,47.57,0.7155,4.757
+BPC157,BPC-157,1419.53,2,free base,free base,0,0,1419.53,100.00,1.4195,10.000
+BPC157,BPC-157,1419.53,2,acetate,acetate,2,0,1537.62,92.32,1.5376,9.232
+BPC157,BPC-157,1419.53,2,chloride,chloride,2,0,1490.44,95.24,1.4904,9.524
+BPC157,BPC-157,1419.53,2,trifluoroacetate,trifluoroacetate,2,0,1645.58,86.26,1.6456,8.626
+BPC157,BPC-157,1419.53,2,trifluoroacetate dihydrate,trifluoroacetate,2,2,1681.61,84.42,1.6816,8.442

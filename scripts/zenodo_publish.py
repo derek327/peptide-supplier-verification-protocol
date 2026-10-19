@@ -235,6 +235,48 @@ RECORDS = {
         "version": "1.0",
         "dir": "purity-content-math",
     },
+    "counterion-salt-forms": {
+        "title": "Counterion and Salt Form in Research Peptides: Mass-Balance Reference Tables (Acetate, Chloride, TFA)",
+        "description": (
+            "<p>Deterministic reference tables for the arithmetic that connects a peptide's salt "
+            "form to the peptide mass and molar quantity in a weighed sample. Three data files "
+            "and one script are provided: a mass-balance table for GHK (three protonatable basic "
+            "centres) and BPC-157 (two) as free base, acetate, chloride, trifluoroacetate and "
+            "trifluoroacetate dihydrate, a label-mass drift table showing the same 10&nbsp;mg "
+            "weighed mass expressed in three salt forms, a 0&ndash;4 charge sensitivity table for "
+            "a 1200&nbsp;g/mol backbone, and a command-line calculator with a self-test.</p>"
+            "<p>Every value is computed from one relation and the stated inputs &mdash; salt molar "
+            "mass equals free-peptide molar mass plus n counterions plus w water molecules &mdash; "
+            "with no measured or fitted data involved, so every row can be regenerated exactly. "
+            "Invariance checks applied before release: a free base returns exactly 100&nbsp;% "
+            "peptide fraction, the fraction falls strictly as bound counterions increase, and at "
+            "equal charge count the trifluoroacetate fraction is lower than the acetate fraction.</p>"
+            "<p>The README states plainly what the numbers do not support: integral counterion "
+            "stoichiometry is a modelling assumption rather than a measured property, real "
+            "materials can carry fractional or mixed counterion loads, water content moves with "
+            "handling, and the tables say nothing about purity, stability or the behaviour of any "
+            "peptide in any biological system.</p>"
+            "<p>Catalog and product documentation for the material forms discussed: "
+            "<a href=\"https://helixpeptidesupply.com/catalog\">helixpeptidesupply.com/catalog</a>. "
+            "Product-level documentation and batch records: "
+            "<a href=\"https://helixpeptidesupply.com/products\">helixpeptidesupply.com/products</a>.</p>"
+        ),
+        "creator": "Helix Peptide Supply",
+        "affiliation": "Helix Peptide Supply (laboratory reagents)",
+        "keywords": [
+            "counterion", "trifluoroacetate", "acetate salt", "salt form", "peptide content",
+            "mass balance", "molar mass", "documentation review", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://helixpeptidesupply.com/catalog", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://helixpeptidesupply.com/products", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": "All values are exact functions of the stated composition; see README formula.",
+        "version": "1.0",
+        "dir": "counterion-salt-forms",
+    },
 }
 
 
