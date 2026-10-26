@@ -3,6 +3,20 @@
   "assets": [
     {
       "kind": "zenodo",
+      "name": "W9 synthesis-to-shelf traceability",
+      "record_id": "23654879",
+      "url": "https://zenodo.org/records/23654879",
+      "doi": "10.5281/zenodo.23654879",
+      "published": "2026-10-26",
+      "targets": [
+        "https://helixpeptideoem.com/services",
+        "https://helixpeptideoem.com/products"
+      ],
+      "link_verified": "2026-10-26",
+      "link_verified_how": "浏览器抽查：记录页 4 条我站锚点（正文 description 2 条 + Related works 2 条），rel 全为空串；全页 58 个 <a> 中 nofollow 计数 0 = dofollow；Publisher 行 = Helix Peptide OEM；6 个文件在档（README/3 CSV/JSON/audit.py）"
+    },
+    {
+      "kind": "zenodo",
       "name": "W8 counterion & salt formats",
       "record_id": "23463236",
       "url": "https://zenodo.org/records/23463236",
