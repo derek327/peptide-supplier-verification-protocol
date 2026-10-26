@@ -1,0 +1,368 @@
+{
+  "note": "Seven demonstration lots. verdict/expected_findings are asserted at build time and again by traceability_audit.py --selftest.",
+  "as_of": "2026-10-26",
+  "horizon_days": 90,
+  "retention_policy_example_months": {
+    "SYN": 60,
+    "PUR": 60,
+    "QC": 60,
+    "FILL": 60,
+    "SHIP": 36
+  },
+  "lots": [
+    {
+      "lot_id": "HLX-OEM-2604-A7-W",
+      "site_code": "OEM",
+      "expected_verdict": "complete",
+      "expected_findings": [],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2604-A7-W",
+          "synthesis_date": "2026-04-08",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2604-A7-W",
+          "purification_date": "2026-04-12",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 3800,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "QC",
+          "lot_id": "HLX-OEM-2604-A7-W",
+          "release_date": "2026-04-20",
+          "coa_ref": "CoA-HLX-OEM-2604-A7-W-QC",
+          "purity_result_pct": 98.4,
+          "released_by": "QA-05"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2604-A7-W",
+          "fill_date": "2026-04-27",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": "LBL-v3"
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2604-A7-W",
+          "dispatch_date": "2026-05-04",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "All five stages present, dates ordered, mass monotonically decreasing"
+    },
+    {
+      "lot_id": "HLX-OEM-2604-B2-J",
+      "site_code": "OEM",
+      "expected_verdict": "broken",
+      "expected_findings": [
+        "missing_stage:QC"
+      ],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2604-B2-J",
+          "synthesis_date": "2026-04-08",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2604-B2-J",
+          "purification_date": "2026-04-12",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 3800,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2604-B2-J",
+          "fill_date": "2026-04-27",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": "LBL-v3"
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2604-B2-J",
+          "dispatch_date": "2026-05-04",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "Release record absent: four stages present but the CoA stage is missing"
+    },
+    {
+      "lot_id": "HLX-OEM-2604-C5-U",
+      "site_code": "OEM",
+      "expected_verdict": "broken",
+      "expected_findings": [
+        "mass_gain:SYN->PUR"
+      ],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2604-C5-U",
+          "synthesis_date": "2026-04-08",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2604-C5-U",
+          "purification_date": "2026-04-12",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 5300,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "QC",
+          "lot_id": "HLX-OEM-2604-C5-U",
+          "release_date": "2026-04-20",
+          "coa_ref": "CoA-HLX-OEM-2604-C5-U-QC",
+          "purity_result_pct": 98.4,
+          "released_by": "QA-05"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2604-C5-U",
+          "fill_date": "2026-04-27",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": "LBL-v3"
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2604-C5-U",
+          "dispatch_date": "2026-05-04",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "Purified mass 5300 mg exceeds crude mass 5000 mg: over-unity yield"
+    },
+    {
+      "lot_id": "HLX-OEM-2604-D9-H",
+      "site_code": "OEM",
+      "expected_verdict": "broken",
+      "expected_findings": [
+        "stage_order:FILL->SHIP"
+      ],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2604-D9-H",
+          "synthesis_date": "2026-04-08",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2604-D9-H",
+          "purification_date": "2026-04-12",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 3800,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "QC",
+          "lot_id": "HLX-OEM-2604-D9-H",
+          "release_date": "2026-04-20",
+          "coa_ref": "CoA-HLX-OEM-2604-D9-H-QC",
+          "purity_result_pct": 98.4,
+          "released_by": "QA-05"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2604-D9-H",
+          "fill_date": "2026-04-27",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": "LBL-v3"
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2604-D9-H",
+          "dispatch_date": "2026-04-25",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "Dispatch precedes fill by two days: retrospective fill date"
+    },
+    {
+      "lot_id": "HLX-OEM-2604-E3-S",
+      "site_code": "OEM",
+      "expected_verdict": "broken",
+      "expected_findings": [
+        "id_invalid:SYN"
+      ],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2604-E3-0",
+          "synthesis_date": "2026-04-08",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2604-E3-S",
+          "purification_date": "2026-04-12",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 3800,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "QC",
+          "lot_id": "HLX-OEM-2604-E3-S",
+          "release_date": "2026-04-20",
+          "coa_ref": "CoA-HLX-OEM-2604-E3-S-QC",
+          "purity_result_pct": 98.4,
+          "released_by": "QA-05"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2604-E3-S",
+          "fill_date": "2026-04-27",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": "LBL-v3"
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2604-E3-S",
+          "dispatch_date": "2026-05-04",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "Synthesis record carries a lot number whose check character fails"
+    },
+    {
+      "lot_id": "HLX-OEM-2604-F4-F",
+      "site_code": "OEM",
+      "expected_verdict": "broken",
+      "expected_findings": [
+        "missing_field:FILL.label_version"
+      ],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2604-F4-F",
+          "synthesis_date": "2026-04-08",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2604-F4-F",
+          "purification_date": "2026-04-12",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 3800,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "QC",
+          "lot_id": "HLX-OEM-2604-F4-F",
+          "release_date": "2026-04-20",
+          "coa_ref": "CoA-HLX-OEM-2604-F4-F-QC",
+          "purity_result_pct": 98.4,
+          "released_by": "QA-05"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2604-F4-F",
+          "fill_date": "2026-04-27",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": ""
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2604-F4-F",
+          "dispatch_date": "2026-05-04",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "Fill record present but the label version field is empty: stage counts as absent"
+    },
+    {
+      "lot_id": "HLX-OEM-2112-G6-Z",
+      "site_code": "OEM",
+      "expected_verdict": "broken",
+      "expected_findings": [
+        "retention_soon:SYN"
+      ],
+      "events": [
+        {
+          "stage": "SYN",
+          "lot_id": "HLX-OEM-2112-G6-Z",
+          "synthesis_date": "2021-12-01",
+          "crude_mass_mg": 5000,
+          "sequence_ref": "SEQ-GHK-01",
+          "operator": "OP-114"
+        },
+        {
+          "stage": "PUR",
+          "lot_id": "HLX-OEM-2112-G6-Z",
+          "purification_date": "2021-12-06",
+          "method": "RP-HPLC, C18, linear acetonitrile gradient",
+          "purified_mass_mg": 3800,
+          "analyst": "AN-27"
+        },
+        {
+          "stage": "QC",
+          "lot_id": "HLX-OEM-2112-G6-Z",
+          "release_date": "2021-12-10",
+          "coa_ref": "CoA-HLX-OEM-2112-G6-Z-QC",
+          "purity_result_pct": 98.4,
+          "released_by": "QA-05"
+        },
+        {
+          "stage": "FILL",
+          "lot_id": "HLX-OEM-2112-G6-Z",
+          "fill_date": "2021-12-15",
+          "units": 90,
+          "mass_per_unit_mg": 38.0,
+          "label_version": "LBL-v3"
+        },
+        {
+          "stage": "SHIP",
+          "lot_id": "HLX-OEM-2112-G6-Z",
+          "dispatch_date": "2021-12-20",
+          "carrier": "DHL Express",
+          "waybill_ref": "WB-88213",
+          "quantity_mg": 3400,
+          "receipt_signed_by": "RCPT-01"
+        }
+      ],
+      "note": "60-month retention on the 2021-12 records expires 2026-12, inside the 90-day horizon"
+    }
+  ]
+}

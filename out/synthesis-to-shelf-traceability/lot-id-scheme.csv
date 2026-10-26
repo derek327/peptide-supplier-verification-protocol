@@ -1,0 +1,6 @@
+segment,example,length,alphabet,meaning,rule
+issuer,HLX,3,A-Z0-9,Identifier issuer (supplier or brand owner),"Fixed per issuer, never reused"
+site,OEM,3,A-Z0-9,Manufacture or fill site code,Must equal the site named on the record
+yymm,2604,4,0-9,Year and month of synthesis,MM must be 01-12
+seq,A7,2,A-Z0-9,"Per-month sequence, base 36",Never re-used; re-work appends .R<n>
+check,W,1,A-Z0-9,Position-weighted base-36 check character,sum(value(char_i)*(i+1)) mod 36 over issuer+site+yymm+seq

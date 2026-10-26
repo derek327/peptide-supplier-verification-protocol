@@ -858,6 +858,558 @@ CC BY 4.0
     return d, len(rows), len(drift), len(sens)
 
 
+SCRIPT_CORE = r'''
+import calendar
+import json
+import os
+from datetime import date, datetime
+
+LOT_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+STAGES = [
+    {"stage": "SYN", "name": "Synthesis", "date_field": "synthesis_date",
+     "fields": ["lot_id", "crude_mass_mg", "sequence_ref", "operator"], "retention_months": 60},
+    {"stage": "PUR", "name": "Purification", "date_field": "purification_date",
+     "fields": ["lot_id", "method", "purified_mass_mg", "analyst"], "retention_months": 60},
+    {"stage": "QC", "name": "QC release", "date_field": "release_date",
+     "fields": ["lot_id", "coa_ref", "purity_result_pct", "released_by"], "retention_months": 60},
+    {"stage": "FILL", "name": "Fill and packaging", "date_field": "fill_date",
+     "fields": ["lot_id", "units", "mass_per_unit_mg", "label_version"], "retention_months": 60},
+    {"stage": "SHIP", "name": "Dispatch and receipt", "date_field": "dispatch_date",
+     "fields": ["lot_id", "carrier", "waybill_ref", "quantity_mg", "receipt_signed_by"], "retention_months": 36},
+]
+
+STAGE_ORDER = [s["stage"] for s in STAGES]
+STAGE_BY = {s["stage"]: s for s in STAGES}
+
+
+def check_char(payload):
+    """Position-weighted base-36 check character over the hyphen-free payload."""
+    payload = payload.upper()
+    total = 0
+    for i, ch in enumerate(payload):
+        total += LOT_ALPHABET.index(ch) * (i + 1)
+    return LOT_ALPHABET[total % 36]
+
+
+def compose_lot_id(issuer, site, yymm, seq):
+    payload = "{}{}{}{}".format(issuer, site, yymm, seq).upper()
+    return "{}-{}-{}-{}-{}".format(issuer.upper(), site.upper(), yymm, seq.upper(), check_char(payload))
+
+
+def lot_id_parts(value):
+    value = (value or "").strip().upper()
+    parts = value.split("-")
+    if len(parts) != 5:
+        return None
+    issuer, site, yymm, seq, chk = parts
+    if (len(issuer), len(site), len(yymm), len(seq), len(chk)) != (3, 3, 4, 2, 1):
+        return None
+    if not yymm.isdigit() or not 1 <= int(yymm[2:]) <= 12:
+        return None
+    for group in (issuer, site, seq, chk):
+        if any(c not in LOT_ALPHABET for c in group):
+            return None
+    return {"issuer": issuer, "site": site, "yymm": yymm, "seq": seq, "check": chk}
+
+
+def is_valid_lot_id(value):
+    p = lot_id_parts(value)
+    if not p:
+        return False
+    payload = p["issuer"] + p["site"] + p["yymm"] + p["seq"]
+    return check_char(payload) == p["check"]
+
+
+def add_months(d, months):
+    y = d.year + (d.month - 1 + months) // 12
+    m = (d.month - 1 + months) % 12 + 1
+    day = min(d.day, calendar.monthrange(y, m)[1])
+    return date(y, m, day)
+
+
+def parse_date(value):
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def num(value):
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value).strip())
+    except Exception:
+        return None
+
+
+def _empty(value):
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def audit_lot(lot, as_of=None, horizon_days=90, mass_tol_pct=0.0):
+    """Five-rule documentary audit. Returns verdict + findings + yields."""
+    as_of = as_of or date.today()
+    findings = []
+    events = lot.get("events") or []
+    by_stage = {}
+    for ev in events:
+        by_stage.setdefault(ev.get("stage"), []).append(ev)
+    site_code = (lot.get("site_code") or "").strip().upper()
+
+    # R1 identifier validity (structure + check character + site code)
+    for ev in events:
+        lid = ev.get("lot_id")
+        parts = lot_id_parts(lid)
+        if not parts or not is_valid_lot_id(lid):
+            findings.append("id_invalid:{}".format(ev.get("stage")))
+        elif site_code and parts["site"] != site_code:
+            findings.append("id_site_mismatch:{}".format(ev.get("stage")))
+
+    # R2 stage coverage and mandatory fields
+    for spec in STAGES:
+        st = spec["stage"]
+        if st not in by_stage:
+            findings.append("missing_stage:{}".format(st))
+            continue
+        for ev in by_stage[st]:
+            if _empty(ev.get(spec["date_field"])):
+                findings.append("missing_field:{}.{}".format(st, spec["date_field"]))
+            for f in spec["fields"]:
+                if _empty(ev.get(f)):
+                    findings.append("missing_field:{}.{}".format(st, f))
+
+    # R3 stage ordering
+    dated = []
+    for spec in STAGES:
+        for ev in by_stage.get(spec["stage"], []):
+            d = parse_date(ev.get(spec["date_field"]))
+            if d:
+                dated.append((STAGE_ORDER.index(spec["stage"]), d, spec["stage"]))
+    dated.sort(key=lambda x: x[0])
+    for (_i0, d0, s0), (_i1, d1, s1) in zip(dated, dated[1:]):
+        if d1 < d0:
+            findings.append("stage_order:{}->{}".format(s0, s1))
+
+    # R4 mass continuity (mass may not increase along the chain)
+    points = []
+    for spec in STAGES:
+        for ev in by_stage.get(spec["stage"], []):
+            st = spec["stage"]
+            v = None
+            if st == "SYN":
+                v = num(ev.get("crude_mass_mg"))
+            elif st == "PUR":
+                v = num(ev.get("purified_mass_mg"))
+            elif st == "FILL":
+                u, m = num(ev.get("units")), num(ev.get("mass_per_unit_mg"))
+                v = u * m if (u is not None and m is not None) else None
+            elif st == "SHIP":
+                v = num(ev.get("quantity_mg"))
+            if v is not None:
+                points.append((st, v))
+    yields = {}
+    for (s0, v0), (s1, v1) in zip(points, points[1:]):
+        if v1 > v0 * (1 + mass_tol_pct / 100.0):
+            findings.append("mass_gain:{}->{}:{:.3f}->{:.3f}".format(s0, s1, v0, v1))
+        if v0 > 0:
+            yields["{}_to_{}_pct".format(s0, s1)] = round(v1 / v0 * 100.0, 2)
+    if points and points[0][1] > 0:
+        yields["overall_pct"] = round(points[-1][1] / points[0][1] * 100.0, 2)
+
+    # R5 retention horizon
+    for spec in STAGES:
+        for ev in by_stage.get(spec["stage"], []):
+            d = parse_date(ev.get(spec["date_field"]))
+            if not d:
+                continue
+            deadline = add_months(d, spec["retention_months"])
+            delta = (deadline - as_of).days
+            if 0 <= delta <= horizon_days:
+                findings.append("retention_soon:{}:{}".format(spec["stage"], deadline.isoformat()))
+
+    return {
+        "lot_id": lot.get("lot_id"),
+        "verdict": "complete" if not findings else "broken",
+        "findings": findings,
+        "yields": yields,
+        "stages_present": [s for s in STAGE_ORDER if s in by_stage],
+    }
+'''
+
+SCRIPT_CLI = r'''
+
+def _load_json(path):
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description="Lot identifier validation and traceability chain audit")
+    ap.add_argument("--lot-id", help="validate one lot identifier and decode its segments")
+    ap.add_argument("--audit", help="audit a JSON file of lots (see audit-demo-lots.json)")
+    ap.add_argument("--as-of", help="reference date for the retention horizon (YYYY-MM-DD)")
+    ap.add_argument("--horizon-days", type=int, default=90)
+    ap.add_argument("--selftest", action="store_true")
+    args = ap.parse_args(argv)
+
+    if args.lot_id:
+        parts = lot_id_parts(args.lot_id)
+        ok = is_valid_lot_id(args.lot_id)
+        print("lot id            :", args.lot_id.strip().upper())
+        print("well formed       :", bool(parts))
+        print("check character ok:", ok)
+        if parts:
+            payload = parts["issuer"] + parts["site"] + parts["yymm"] + parts["seq"]
+            print("issuer/site/yymm/seq :", parts["issuer"], parts["site"], parts["yymm"], parts["seq"])
+            print("expected check    :", check_char(payload), "stated:", parts["check"])
+        return 0 if ok else 1
+
+    if args.audit:
+        data = _load_json(args.audit)
+        lots = data.get("lots", data)
+        as_of = parse_date(args.as_of) if args.as_of else None
+        bad = 0
+        for lot in lots:
+            res = audit_lot(lot, as_of=as_of, horizon_days=args.horizon_days)
+            expected = lot.get("expected_verdict")
+            mark = "!" if expected and expected != res["verdict"] else " "
+            if expected and expected != res["verdict"]:
+                bad += 1
+            print("{} {:<24} {:<8} {}".format(mark, str(res["lot_id"]), res["verdict"],
+                                              ", ".join(res["findings"]) or "-"))
+            if res["yields"]:
+                print("    yields: " + ", ".join("{}={}%".format(k, v) for k, v in res["yields"].items()))
+        if any(lot.get("expected_verdict") for lot in lots):
+            print("mismatches vs expected_verdict: {}".format(bad))
+        return 0 if bad == 0 else 2
+
+    if args.selftest:
+        return selftest()
+
+    ap.print_help()
+    return 1
+
+
+def selftest():
+    good = compose_lot_id("HLX", "OEM", "2604", "A7")
+    assert is_valid_lot_id(good), good
+    # any single-character substitution must invalidate the identifier
+    for i in range(len(good)):
+        if good[i] == "-":
+            continue
+        repl = "0" if good[i] != "0" else "1"
+        tampered = good[:i] + repl + good[i + 1:]
+        assert not is_valid_lot_id(tampered), tampered
+    assert lot_id_parts("HLX-OEM-2613-A7-Z") is None   # month 13
+    assert lot_id_parts("HLX-OEM-2604-A77-Z") is None  # sequence must be 2 chars
+    assert not is_valid_lot_id("HLX-OEM-2604-A7-Z")
+    demo = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audit-demo-lots.json")
+    if os.path.exists(demo):
+        for lot in _load_json(demo)["lots"]:
+            res = audit_lot(lot, as_of=date(2026, 10, 26))
+            assert res["verdict"] == lot["expected_verdict"], (res["lot_id"], res["findings"])
+            for prefix in lot.get("expected_findings", []):
+                assert any(f.startswith(prefix) for f in res["findings"]), (res["lot_id"], prefix, res["findings"])
+    print("selftest ok")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+'''
+
+
+def build_synthesis_to_shelf_traceability():
+    """合成→货架溯源：lot ID 方案、五段记录 schema、示例批次事件、可跑审计与不变量自检。"""
+    d = os.path.join(OUT, "synthesis-to-shelf-traceability")
+    os.makedirs(d, exist_ok=True)
+
+    ns = {}
+    exec(SCRIPT_CORE, ns)  # 与发布脚本共用同一份逻辑源，避免断言与交付物漂移
+    compose = ns["compose_lot_id"]
+    audit_lot = ns["audit_lot"]
+    check_char = ns["check_char"]
+    from datetime import date as _date
+
+    # ---- 1. lot ID 方案
+    example_payload = "HLXOEM2604A7"
+    chk = check_char(example_payload)
+    scheme_rows = [
+        ("issuer", "HLX", 3, "A-Z0-9", "Identifier issuer (supplier or brand owner)", "Fixed per issuer, never reused"),
+        ("site", "OEM", 3, "A-Z0-9", "Manufacture or fill site code", "Must equal the site named on the record"),
+        ("yymm", "2604", 4, "0-9", "Year and month of synthesis", "MM must be 01-12"),
+        ("seq", "A7", 2, "A-Z0-9", "Per-month sequence, base 36", "Never re-used; re-work appends .R<n>"),
+        ("check", chk, 1, "A-Z0-9", "Position-weighted base-36 check character", "sum(value(char_i)*(i+1)) mod 36 over issuer+site+yymm+seq"),
+    ]
+    with open(os.path.join(d, "lot-id-scheme.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["segment", "example", "length", "alphabet", "meaning", "rule"])
+        w.writeheader()
+        for seg, ex, ln, al, mean, rule in scheme_rows:
+            w.writerow({"segment": seg, "example": ex, "length": ln, "alphabet": al,
+                        "meaning": mean, "rule": rule})
+
+    # ---- 2. 五段记录 schema
+    labels = {
+        "lot_id": "Lot identifier", "crude_mass_mg": "Crude mass (mg)",
+        "sequence_ref": "Sequence reference", "operator": "Operator ID",
+        "method": "Purification method", "purified_mass_mg": "Purified mass (mg)",
+        "analyst": "Analyst ID", "coa_ref": "CoA document reference",
+        "purity_result_pct": "Reported purity (%)", "released_by": "Release approver ID",
+        "units": "Units filled", "mass_per_unit_mg": "Mass per unit (mg)",
+        "label_version": "Label document version", "carrier": "Carrier",
+        "waybill_ref": "Waybill reference", "quantity_mg": "Dispatched quantity (mg)",
+        "receipt_signed_by": "Receipt signature ID",
+    }
+    evidence = {
+        "SYN": "production record", "PUR": "production record", "QC": "CoA / release record",
+        "FILL": "packaging record", "SHIP": "logistics document",
+    }
+    schema_rows = []
+    for spec in ns["STAGES"]:
+        for f in spec["fields"]:
+            schema_rows.append({
+                "stage": spec["stage"], "stage_name": spec["name"],
+                "date_field": spec["date_field"], "field_code": f,
+                "field_label": labels[f], "requirement": "required",
+                "evidence_type": evidence[spec["stage"]],
+                "retention_months_example": spec["retention_months"],
+            })
+    with open(os.path.join(d, "traceability-record-schema.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(schema_rows[0].keys()))
+        w.writeheader()
+        w.writerows(schema_rows)
+
+    # ---- 3. 示例批次（长格式）
+    def events(lot_id, dsyn, dpur, dqc, dfill, dship, mcrude, mpur, units, mpu, qty):
+        return [
+            {"stage": "SYN", "lot_id": lot_id, "synthesis_date": dsyn, "crude_mass_mg": mcrude,
+             "sequence_ref": "SEQ-GHK-01", "operator": "OP-114"},
+            {"stage": "PUR", "lot_id": lot_id, "purification_date": dpur,
+             "method": "RP-HPLC, C18, linear acetonitrile gradient", "purified_mass_mg": mpur,
+             "analyst": "AN-27"},
+            {"stage": "QC", "lot_id": lot_id, "release_date": dqc,
+             "coa_ref": "CoA-{}-QC".format(lot_id), "purity_result_pct": 98.4, "released_by": "QA-05"},
+            {"stage": "FILL", "lot_id": lot_id, "fill_date": dfill, "units": units,
+             "mass_per_unit_mg": mpu, "label_version": "LBL-v3"},
+            {"stage": "SHIP", "lot_id": lot_id, "dispatch_date": dship, "carrier": "DHL Express",
+             "waybill_ref": "WB-88213", "quantity_mg": qty, "receipt_signed_by": "RCPT-01"},
+        ]
+
+    lot_ok = compose("HLX", "OEM", "2604", "A7")
+    ok_events = events(lot_ok, "2026-04-08", "2026-04-12", "2026-04-20", "2026-04-27",
+                       "2026-05-04", 5000, 3800, 90, 38.0, 3400)
+
+    long_rows = []
+    for spec in ns["STAGES"]:
+        ev = next(e for e in ok_events if e["stage"] == spec["stage"])
+        for f in spec["fields"]:
+            long_rows.append({"stage": spec["stage"], "stage_name": spec["name"],
+                              "event_date": ev[spec["date_field"]], "lot_id": ev["lot_id"],
+                              "field": f, "value": ev[f]})
+    with open(os.path.join(d, "sample-lot-events.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["stage", "stage_name", "event_date", "lot_id", "field", "value"])
+        w.writeheader()
+        w.writerows(long_rows)
+
+    # ---- 4. 审计演示批次（含期望判定）
+    import copy
+
+    def variant(lot_id, **over):
+        evs = events(lot_id, over.get("dsyn", "2026-04-08"), over.get("dpur", "2026-04-12"),
+                     over.get("dqc", "2026-04-20"), over.get("dfill", "2026-04-27"),
+                     over.get("dship", "2026-05-04"), over.get("mcrude", 5000),
+                     over.get("mpur", 3800), over.get("units", 90), over.get("mpu", 38.0),
+                     over.get("qty", 3400))
+        return evs
+
+    lots = []
+
+    lots.append({"lot_id": lot_ok, "site_code": "OEM", "expected_verdict": "complete",
+                 "expected_findings": [], "events": ok_events,
+                 "note": "All five stages present, dates ordered, mass monotonically decreasing"})
+
+    no_qc = [e for e in variant(compose("HLX", "OEM", "2604", "B2")) if e["stage"] != "QC"]
+    lots.append({"lot_id": compose("HLX", "OEM", "2604", "B2"), "site_code": "OEM",
+                 "expected_verdict": "broken", "expected_findings": ["missing_stage:QC"],
+                 "events": no_qc,
+                 "note": "Release record absent: four stages present but the CoA stage is missing"})
+
+    gain = variant(compose("HLX", "OEM", "2604", "C5"), mpur=5300)
+    lots.append({"lot_id": compose("HLX", "OEM", "2604", "C5"), "site_code": "OEM",
+                 "expected_verdict": "broken", "expected_findings": ["mass_gain:SYN->PUR"],
+                 "events": gain,
+                 "note": "Purified mass 5300 mg exceeds crude mass 5000 mg: over-unity yield"})
+
+    inverted = variant(compose("HLX", "OEM", "2604", "D9"), dship="2026-04-25")
+    lots.append({"lot_id": compose("HLX", "OEM", "2604", "D9"), "site_code": "OEM",
+                 "expected_verdict": "broken", "expected_findings": ["stage_order:FILL->SHIP"],
+                 "events": inverted,
+                 "note": "Dispatch precedes fill by two days: retrospective fill date"})
+
+    bad_id_lot = compose("HLX", "OEM", "2604", "E3")
+    tampered = variant(bad_id_lot)
+    bad_char = "0" if tampered[0]["lot_id"][-1] != "0" else "1"
+    tampered[0]["lot_id"] = tampered[0]["lot_id"][:-1] + bad_char
+    lots.append({"lot_id": bad_id_lot, "site_code": "OEM", "expected_verdict": "broken",
+                 "expected_findings": ["id_invalid:SYN"], "events": tampered,
+                 "note": "Synthesis record carries a lot number whose check character fails"})
+
+    no_label = variant(compose("HLX", "OEM", "2604", "F4"))
+    for e in no_label:
+        if e["stage"] == "FILL":
+            e["label_version"] = ""
+    lots.append({"lot_id": compose("HLX", "OEM", "2604", "F4"), "site_code": "OEM",
+                 "expected_verdict": "broken", "expected_findings": ["missing_field:FILL.label_version"],
+                 "events": no_label,
+                 "note": "Fill record present but the label version field is empty: stage counts as absent"})
+
+    aged = variant(compose("HLX", "OEM", "2112", "G6"), dsyn="2021-12-01", dpur="2021-12-06",
+                   dqc="2021-12-10", dfill="2021-12-15", dship="2021-12-20")
+    lots.append({"lot_id": compose("HLX", "OEM", "2112", "G6"), "site_code": "OEM",
+                 "expected_verdict": "broken", "expected_findings": ["retention_soon:SYN"],
+                 "events": aged,
+                 "note": "60-month retention on the 2021-12 records expires 2026-12, inside the 90-day horizon"})
+
+    with open(os.path.join(d, "audit-demo-lots.json"), "w", encoding="utf-8") as fh:
+        json.dump({
+            "note": "Seven demonstration lots. verdict/expected_findings are asserted at build time "
+                    "and again by traceability_audit.py --selftest.",
+            "as_of": "2026-10-26", "horizon_days": 90,
+            "retention_policy_example_months": {"SYN": 60, "PUR": 60, "QC": 60, "FILL": 60, "SHIP": 36},
+            "lots": lots,
+        }, fh, ensure_ascii=False, indent=2)
+
+    # ---- 5. 审计脚本
+    script = ('#!/usr/bin/env python3\n'
+              '"""Lot identifier validation and traceability chain audit (documentation only).\n\n'
+              'Usage:\n'
+              '  python3 traceability_audit.py --lot-id HLX-OEM-2604-A7-' + chk + '\n'
+              '  python3 traceability_audit.py --audit audit-demo-lots.json --as-of 2026-10-26\n'
+              '  python3 traceability_audit.py --selftest\n\n'
+              'Rules: R1 identifier validity, R2 stage coverage and mandatory fields, R3 stage ordering,\n'
+              'R4 mass continuity (mass may not increase), R5 retention horizon.\n'
+              '"""\n' + SCRIPT_CORE + SCRIPT_CLI)
+    open(os.path.join(d, "traceability_audit.py"), "w", encoding="utf-8").write(script)
+
+    # ---- 出版前不变量自检（全部对已解析数值断言，不对格式化文本断言）
+    # 1) 合法 ID 通过；任一单字符替换必须失效
+    assert ns["is_valid_lot_id"](lot_ok), lot_ok
+    for i in range(len(lot_ok)):
+        if lot_ok[i] == "-":
+            continue
+        repl = "0" if lot_ok[i] != "0" else "1"
+        assert not ns["is_valid_lot_id"](lot_ok[:i] + repl + lot_ok[i + 1:]), (lot_ok, i)
+    # 2) 七条演示批次的判定必须与期望一致
+    for lot in lots:
+        res = audit_lot(lot, as_of=_date(2026, 10, 26))
+        assert res["verdict"] == lot["expected_verdict"], (lot["lot_id"], res["findings"])
+        if lot["expected_verdict"] == "complete":
+            assert res["findings"] == [], res["findings"]
+        for prefix in lot["expected_findings"]:
+            assert any(f.startswith(prefix) for f in res["findings"]), (lot["lot_id"], prefix, res["findings"])
+    # 3) 完整批次的收率必须等于手算值
+    y = audit_lot(lots[0], as_of=_date(2026, 10, 26))["yields"]
+    assert abs(y["SYN_to_PUR_pct"] - 76.0) < 1e-9, y      # 3800/5000
+    assert abs(y["PUR_to_FILL_pct"] - 90.0) < 1e-9, y     # 90 x 38.0 = 3420 / 3800
+    assert abs(y["FILL_to_SHIP_pct"] - 99.42) < 0.01, y   # 3400/3420
+    assert abs(y["overall_pct"] - 68.0) < 1e-9, y         # 3400/5000
+    # 4) 零容差：0.5 mg 的质量增量也必须被抓到（否则质量规则形同不存在）
+    tiny = variant(compose("HLX", "OEM", "2604", "H8"), mpur=5000.5)
+    tiny_res = audit_lot({"lot_id": tiny[0]["lot_id"], "site_code": "OEM", "events": tiny},
+                         as_of=_date(2026, 10, 26))
+    assert any(f.startswith("mass_gain:SYN->PUR") for f in tiny_res["findings"]), tiny_res["findings"]
+    # 5) 保留期算术：跨年加月必须落在正确日历日
+    assert ns["add_months"](_date(2021, 12, 1), 60) == _date(2026, 12, 1)
+    assert ns["add_months"](_date(2024, 1, 31), 1) == _date(2024, 2, 29)   # 闰年末日收敛
+    assert ns["add_months"](_date(2021, 12, 15), 36) == _date(2024, 12, 15)
+    # 6) 交付脚本必须可编译且与断言用的是同一份逻辑源
+    compile(script, "traceability_audit.py", "exec")
+    assert SCRIPT_CORE in script
+
+    readme = """# Traceability from Synthesis to Shelf — record linkage reference set
+
+Companion data for the note *Traceability from Synthesis to Shelf: Record Linkage Across Five
+Handover Boundaries*. Everything here is documentation arithmetic: an identifier scheme, a record
+schema, and an audit that tests five properties of a batch record set. No handling instructions,
+no storage guidance, no biological claims.
+
+## Lot identifier scheme
+
+`HLX-OEM-2604-A7-%s` — issuer, site, year-month of synthesis, base-36 sequence, check character.
+The check character is computed over the hyphen-free payload:
+
+```
+check = ALPHABET[ sum(value(char_i) * (i+1) for i in 0..n-1) mod 36 ]
+ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+```
+
+`lot-id-scheme.csv` documents each segment and its rule.
+
+## The five audit rules
+
+| Rule | Test | Finding code |
+|---|---|---|
+| R1 | Lot identifier well formed, check character valid, site code matches the document | `id_invalid:<stage>` / `id_site_mismatch:<stage>` |
+| R2 | All five stages present; every mandatory field non-empty (empty = absent) | `missing_stage:<stage>` / `missing_field:<stage>.<field>` |
+| R3 | Stage dates non-decreasing in synthesis → purification → release → fill → dispatch | `stage_order:<from>-><to>` |
+| R4 | Recorded mass non-increasing; fill mass computed as units x mass per unit | `mass_gain:<from>-><to>:<prev>-><cur>` |
+| R5 | Retention deadline inside the reference horizon | `retention_soon:<stage>:<deadline>` |
+
+Verdict is `complete` only when there are no findings. That means *documentarily complete*, not
+authentic: a coherently fabricated record set passes all five rules.
+
+## Files
+
+| File | Contents |
+|---|---|
+| `lot-id-scheme.csv` | Identifier segments, alphabets, and the check-character rule |
+| `traceability-record-schema.csv` | %d mandatory fields across the five stages, with evidence type |
+| `sample-lot-events.csv` | One worked lot in long format (%d field rows), all five stages |
+| `audit-demo-lots.json` | Seven demonstration lots with expected verdicts (complete, missing stage, over-unity mass, inverted dates, invalid identifier, empty field, retention horizon) |
+| `traceability_audit.py` | Validator and audit CLI with `--selftest` |
+
+## Usage
+
+```
+python3 traceability_audit.py --lot-id HLX-OEM-2604-A7-%s
+python3 traceability_audit.py --audit audit-demo-lots.json --as-of 2026-10-26
+python3 traceability_audit.py --selftest
+```
+
+The worked lot in `sample-lot-events.csv` gives purification yield 76.0 %%, fill yield 90.0 %%
+and overall yield 68.0 %% (crude 5000 mg, purified 3800 mg, 90 units x 38.0 mg, dispatched
+3400 mg). Those figures are arithmetic on the stated masses, not benchmarks.
+
+## Limits
+
+- The audit detects omission and internal contradiction, not authenticity.
+- The identifier format is an example design, not a standard; a real scheme must have its checksum
+  recomputed, not assumed.
+- Retention periods (60 months production/release, 36 months dispatch) are an example policy input
+  chosen to make the horizon arithmetic visible. They are not regulatory constants and carry no
+  legal meaning.
+- Yields in the demo lots are illustrative arithmetic; purification performance varies with
+  sequence, scale and method.
+
+## Related documentation
+
+- OEM services and private-label supply: https://helixpeptideoem.com/services
+- Product-level documentation and batch records: https://helixpeptideoem.com/products
+
+## License
+
+CC BY 4.0
+""" % (chk, len(schema_rows), len(long_rows), chk)
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+
+    return d, len(schema_rows), len(lots)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
@@ -869,3 +1421,5 @@ if __name__ == "__main__":
     print(f"purity-content-math: {r4} 样品 + {s4} 敏感性行 → {d4}")
     d5, r5, r5b, r5c = build_counterion_salt_forms()
     print(f"counterion-salt-forms: {r5} 盐型行 + {r5b} 漂移行 + {r5c} 位点行 → {d5}")
+    d6, s6, l6 = build_synthesis_to_shelf_traceability()
+    print(f"synthesis-to-shelf-traceability: {s6} 字段 + {l6} 演示批次 → {d6}")

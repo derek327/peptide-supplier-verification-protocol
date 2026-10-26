@@ -1,0 +1,22 @@
+stage,stage_name,event_date,lot_id,field,value
+SYN,Synthesis,2026-04-08,HLX-OEM-2604-A7-W,lot_id,HLX-OEM-2604-A7-W
+SYN,Synthesis,2026-04-08,HLX-OEM-2604-A7-W,crude_mass_mg,5000
+SYN,Synthesis,2026-04-08,HLX-OEM-2604-A7-W,sequence_ref,SEQ-GHK-01
+SYN,Synthesis,2026-04-08,HLX-OEM-2604-A7-W,operator,OP-114
+PUR,Purification,2026-04-12,HLX-OEM-2604-A7-W,lot_id,HLX-OEM-2604-A7-W
+PUR,Purification,2026-04-12,HLX-OEM-2604-A7-W,method,"RP-HPLC, C18, linear acetonitrile gradient"
+PUR,Purification,2026-04-12,HLX-OEM-2604-A7-W,purified_mass_mg,3800
+PUR,Purification,2026-04-12,HLX-OEM-2604-A7-W,analyst,AN-27
+QC,QC release,2026-04-20,HLX-OEM-2604-A7-W,lot_id,HLX-OEM-2604-A7-W
+QC,QC release,2026-04-20,HLX-OEM-2604-A7-W,coa_ref,CoA-HLX-OEM-2604-A7-W-QC
+QC,QC release,2026-04-20,HLX-OEM-2604-A7-W,purity_result_pct,98.4
+QC,QC release,2026-04-20,HLX-OEM-2604-A7-W,released_by,QA-05
+FILL,Fill and packaging,2026-04-27,HLX-OEM-2604-A7-W,lot_id,HLX-OEM-2604-A7-W
+FILL,Fill and packaging,2026-04-27,HLX-OEM-2604-A7-W,units,90
+FILL,Fill and packaging,2026-04-27,HLX-OEM-2604-A7-W,mass_per_unit_mg,38.0
+FILL,Fill and packaging,2026-04-27,HLX-OEM-2604-A7-W,label_version,LBL-v3
+SHIP,Dispatch and receipt,2026-05-04,HLX-OEM-2604-A7-W,lot_id,HLX-OEM-2604-A7-W
+SHIP,Dispatch and receipt,2026-05-04,HLX-OEM-2604-A7-W,carrier,DHL Express
+SHIP,Dispatch and receipt,2026-05-04,HLX-OEM-2604-A7-W,waybill_ref,WB-88213
+SHIP,Dispatch and receipt,2026-05-04,HLX-OEM-2604-A7-W,quantity_mg,3400
+SHIP,Dispatch and receipt,2026-05-04,HLX-OEM-2604-A7-W,receipt_signed_by,RCPT-01

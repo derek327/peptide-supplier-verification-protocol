@@ -1,0 +1,22 @@
+stage,stage_name,date_field,field_code,field_label,requirement,evidence_type,retention_months_example
+SYN,Synthesis,synthesis_date,lot_id,Lot identifier,required,production record,60
+SYN,Synthesis,synthesis_date,crude_mass_mg,Crude mass (mg),required,production record,60
+SYN,Synthesis,synthesis_date,sequence_ref,Sequence reference,required,production record,60
+SYN,Synthesis,synthesis_date,operator,Operator ID,required,production record,60
+PUR,Purification,purification_date,lot_id,Lot identifier,required,production record,60
+PUR,Purification,purification_date,method,Purification method,required,production record,60
+PUR,Purification,purification_date,purified_mass_mg,Purified mass (mg),required,production record,60
+PUR,Purification,purification_date,analyst,Analyst ID,required,production record,60
+QC,QC release,release_date,lot_id,Lot identifier,required,CoA / release record,60
+QC,QC release,release_date,coa_ref,CoA document reference,required,CoA / release record,60
+QC,QC release,release_date,purity_result_pct,Reported purity (%),required,CoA / release record,60
+QC,QC release,release_date,released_by,Release approver ID,required,CoA / release record,60
+FILL,Fill and packaging,fill_date,lot_id,Lot identifier,required,packaging record,60
+FILL,Fill and packaging,fill_date,units,Units filled,required,packaging record,60
+FILL,Fill and packaging,fill_date,mass_per_unit_mg,Mass per unit (mg),required,packaging record,60
+FILL,Fill and packaging,fill_date,label_version,Label document version,required,packaging record,60
+SHIP,Dispatch and receipt,dispatch_date,lot_id,Lot identifier,required,logistics document,36
+SHIP,Dispatch and receipt,dispatch_date,carrier,Carrier,required,logistics document,36
+SHIP,Dispatch and receipt,dispatch_date,waybill_ref,Waybill reference,required,logistics document,36
+SHIP,Dispatch and receipt,dispatch_date,quantity_mg,Dispatched quantity (mg),required,logistics document,36
+SHIP,Dispatch and receipt,dispatch_date,receipt_signed_by,Receipt signature ID,required,logistics document,36

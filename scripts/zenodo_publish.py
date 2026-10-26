@@ -277,6 +277,60 @@ RECORDS = {
         "version": "1.0",
         "dir": "counterion-salt-forms",
     },
+    "synthesis-to-shelf-traceability": {
+        "title": (
+            "Synthesis-to-Shelf Traceability Reference Set: Lot Identifier Scheme, "
+            "Five-Stage Record Schema and Chain Audit"
+        ),
+        "description": (
+            "<p>A documentation reference set for testing whether a supplier's batch record actually "
+            "connects one vial to one synthesis run. It contains four components: a structured lot "
+            "identifier format with a position-weighted base-36 check character; a schema of 21 "
+            "mandatory fields across five record sets (synthesis, purification, QC release, fill and "
+            "packaging, dispatch and receipt); one worked lot in long format (5000&nbsp;mg crude, "
+            "3800&nbsp;mg purified, 90 units &times; 38.0&nbsp;mg filled, 3400&nbsp;mg dispatched, "
+            "giving 76.0&nbsp;%, 90.0&nbsp;% and 68.0&nbsp;% successive and overall yields); and seven "
+            "demonstration lots with expected verdicts.</p>"
+            "<p>The included <code>traceability_audit.py</code> implements five rules &mdash; identifier "
+            "validity, stage coverage and mandatory-field presence, stage date ordering, mass "
+            "continuity (recorded mass may not increase along the chain), and retention horizon "
+            "arithmetic &mdash; and returns a verdict of <em>documentarily complete</em> or "
+            "<em>broken</em> with coded findings. Seven demonstration lots cover a complete chain, a "
+            "missing release stage, an over-unity yield, inverted fill and dispatch dates, a failing "
+            "check character, an empty label-version field, and records inside the retention horizon. "
+            "The script ships with a <code>--selftest</code> that asserts all seven verdicts and the "
+            "single-character tamper rule.</p>"
+            "<p>The set is intended for procurement documentation review, for normalising supplier "
+            "batch records before comparison, and as a test corpus for automated record-extraction "
+            "pipelines. It detects omission and internal contradiction; it does not establish "
+            "authenticity, and it contains no handling or storage guidance and no biological claims. "
+            "Retention periods in the demonstration data are an example policy input, not a "
+            "regulatory constant.</p>"
+            "<p>Private-label and OEM supply documentation, including which party holds which record "
+            "and for how long: <a href=\"https://helixpeptideoem.com/services\">helixpeptideoem.com/services</a>. "
+            "Product-level documentation and batch records: "
+            "<a href=\"https://helixpeptideoem.com/products\">helixpeptideoem.com/products</a>.</p>"
+        ),
+        "creator": "Helix Peptide OEM",
+        "affiliation": "Helix Peptide OEM (private-label research peptide supply)",
+        "keywords": [
+            "traceability", "lot number", "batch record", "chain of custody",
+            "documentation review", "certificate of analysis", "supply chain",
+            "quality documentation", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://helixpeptideoem.com/services", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://helixpeptideoem.com/products", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": (
+            "Record-set boundaries and field requirements follow common pharmaceutical "
+            "documentation practice. Retention periods are an example policy input."
+        ),
+        "version": "1.0",
+        "dir": "synthesis-to-shelf-traceability",
+    },
 }
 
 

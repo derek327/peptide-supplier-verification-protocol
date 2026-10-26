@@ -23,6 +23,10 @@ documentation-first procurement standard.
 - `docs/ghk-cu-procurement-notes.md` — copper-complex verification notes for GHK-Cu lots
 - `docs/retatrutide-procurement-notes.md` — procurement documentation checklist for retatrutide research lots
 - `docs/lyophilized-stability-notes.md` — storage / reconstitution / documentation notes for lyophilized peptides
+- `docs/temperature-excursion-protocol.md` — what to do when a shipment's temperature record shows an excursion (triage matrix, MKT arithmetic, its limits)
+- `docs/purity-vs-peptide-content-math.md` — why HPLC area purity is not peptide content, and what determines the latter
+- `docs/counterion-and-salt-forms.md` — how salt form and counterion move the peptide mass inside a labelled milligram
+- `docs/synthesis-to-shelf-traceability.md` — testing whether a batch record connects a vial to one synthesis run (lot identifier scheme, five record sets, mass and date arithmetic)
 - `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
 
 ```bash
