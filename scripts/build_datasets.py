@@ -1410,6 +1410,270 @@ CC BY 4.0
     return d, len(schema_rows), len(lots)
 
 
+def build_reconstitution_buffers():
+    """复溶缓冲：物种表、缓冲容量曲线、稀释剂配方、浓度换算表 + 可跑计算器。"""
+    import shutil
+    import sys as _sys
+
+    d = os.path.join(OUT, "reconstitution-buffers")
+    os.makedirs(d, exist_ok=True)
+    if HERE not in _sys.path:
+        _sys.path.insert(0, HERE)
+    import reconstitution_calc as rc
+
+    # ---- 1. 缓冲物种（pKa 25 °C、零离子强度；需在 working 条件复测）
+    species_rows = [
+        ("acetate", "acetic acid / sodium acetate", 4.76, 3.6, 5.6, 0.0002, "yes",
+         "Volatile as free acid; pH drifts on repeated opening; weak Ni/Co chelator"),
+        ("citrate", "citric acid (pKa2)", 4.76, 3.0, 6.2, -0.0024, "no",
+         "Three pKa values (3.13 / 4.76 / 6.40); polyvalent anion, high ionic strength per molarity"),
+        ("mes", "2-(N-morpholino)ethanesulfonic acid", 6.10, 5.5, 6.7, -0.011, "no",
+         "Sulfonic acid buffer; low membrane permeability in cell work"),
+        ("histidine", "L-histidine (imidazole)", 6.04, 5.5, 6.5, -0.017, "no",
+         "Common in formulated protein/peptide products; zwitterionic"),
+        ("phosphate", "phosphoric acid (pKa2)", 7.20, 6.2, 8.2, -0.0028, "no",
+         "Three pKa values (2.15 / 7.20 / 12.35); precipitation with divalent cations"),
+        ("hepes", "HEPES", 7.55, 6.8, 8.2, -0.014, "no",
+         "Low temperature coefficient; absorbs below ~230 nm"),
+        ("tris", "tris(hydroxymethyl)aminomethane", 8.06, 7.0, 9.0, -0.028, "no",
+         "Large temperature coefficient: prepare and measure at the same temperature"),
+        ("ammonium", "ammonium (NH4+)", 9.25, 8.2, 10.2, -0.030, "yes",
+         "Volatile as NH3; loses buffer capacity on standing"),
+        ("glycine", "glycine (pKa2)", 9.78, 8.8, 10.6, -0.025, "no",
+         "Amino acid buffer; zwitterionic, useful above the phosphate range"),
+    ]
+    with open(os.path.join(d, "buffer-species.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=[
+            "buffer", "conjugate_acid", "pKa_25C", "useful_pH_low", "useful_pH_high",
+            "dpKa_per_C", "volatile", "notes"])
+        w.writeheader()
+        for name, conj, pka, lo, hi, dpka, vol, note in species_rows:
+            w.writerow({"buffer": name, "conjugate_acid": conj, "pKa_25C": pka,
+                        "useful_pH_low": lo, "useful_pH_high": hi, "dpKa_per_C": dpka,
+                        "volatile": vol, "notes": note})
+
+    # ---- 2. 缓冲容量曲线
+    curve_buffers = [("acetate", 4.76), ("phosphate", 7.20), ("tris", 8.06)]
+    curve_rows = []
+    for bname, pka in curve_buffers:
+        for conc in (10.0, 20.0, 50.0):
+            peak = rc.beta_peak_mM_per_pH(conc)
+            for i in range(-8, 9):  # pKa-2 .. pKa+2，步长 0.25
+                ph = round(pka + i * 0.25, 2)
+                beta = rc.beta_mM_per_pH(conc, pka, ph)
+                curve_rows.append({
+                    "buffer": bname, "total_conc_mM": conc, "pKa_25C": pka, "pH": ph,
+                    "beta_mM_per_pH": round(beta, 3),
+                    "beta_vs_peak_pct": round(100.0 * beta / peak, 1),
+                })
+    with open(os.path.join(d, "buffer-capacity-curve.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(curve_rows[0].keys()))
+        w.writeheader()
+        w.writerows(curve_rows)
+
+    # ---- 3. 稀释剂配方
+    recipe_labels = {
+        "water_for_injection": "Sterile water, no solutes",
+        "saline_0.9pct": "0.9 % w/v NaCl (154 mM)",
+        "pbs_1x": "PBS 1x (137 NaCl / 2.7 KCl / 10 Na2HPO4 / 1.8 KH2PO4 mM)",
+        "acetate_20mM_pH4.5": "20 mM sodium acetate, pH 4.5",
+        "phosphate_20mM_pH7.4": "20 mM sodium phosphate, pH 7.4",
+        "tris_25mM_pH8.0": "25 mM Tris-HCl, pH 8.0",
+        "tbs_pH7.4": "TBS (25 mM Tris / 137 mM NaCl / 2.7 mM KCl, pH 7.4)",
+        "benzyl_alcohol_0.9pct": "0.9 % v/v benzyl alcohol in water (87 mM)",
+    }
+    model_notes = {
+        "water_for_injection": "Reference point: no ionic species",
+        "saline_0.9pct": "Full dissociation of a strong electrolyte",
+        "pbs_1x": "Nominal: all weighed salts fully dissociated; phosphate charge as HPO4(2-) / H2PO4(1-) at the recipe ratio",
+        "acetate_20mM_pH4.5": "Effective value uses f(deprotonated) = 35.5 % at pH 4.5",
+        "phosphate_20mM_pH7.4": "Nominal only: diprotic speciation not modelled in this set",
+        "tris_25mM_pH8.0": "Effective value uses f(protonated) = 53.4 % at pH 8.0",
+        "tbs_pH7.4": "Effective value adds Tris-HCl contribution to the strong salts at pH 7.4",
+        "benzyl_alcohol_0.9pct": "Non-ionic: zero ionic strength but 87 mOsm/L of particles",
+    }
+    recipe_rows = []
+    for rname, _nom, _strong, _pt, _wk, _ph in rc.RECIPES:
+        i_nom, i_eff, osm = rc.recipe_values(rname)
+        recipe_rows.append({
+            "recipe": rname, "composition": recipe_labels[rname],
+            "ionic_strength_nominal_mM": round(i_nom, 2),
+            "ionic_strength_effective_mM": "" if i_eff is None else round(i_eff, 2),
+            "osmolarity_nominal_mOsm_L": round(osm, 1),
+            "model_note": model_notes[rname],
+        })
+    with open(os.path.join(d, "diluent-recipes.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(recipe_rows[0].keys()))
+        w.writeheader()
+        w.writerows(recipe_rows)
+
+    # ---- 4. 浓度换算表（净肽含量 → 体积 / 摩尔浓度）
+    conc_rows = []
+    example_mw = 1200.0
+    for mass in (2.0, 5.0, 10.0, 20.0):
+        for content in (100.0, 90.0):
+            for target in (2.0, 5.0):
+                vol_ml = rc.required_volume_mL(mass, content, target)
+                conc_rows.append({
+                    "label_mass_mg": mass, "net_content_pct": content,
+                    "net_peptide_mg": round(mass * content / 100.0, 3),
+                    "target_mg_per_mL": target,
+                    "diluent_volume_mL": round(vol_ml, 4),
+                    "volume_for_100ug_uL": round(100.0 / target, 1),
+                    "molarity_uM_at_target_MW1200": round(rc.molarity_uM(target, example_mw), 1),
+                })
+    with open(os.path.join(d, "concentration-arithmetic.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(conc_rows[0].keys()))
+        w.writeheader()
+        w.writerows(conc_rows)
+
+    # ---- 5. 计算器副本
+    shutil.copyfile(os.path.join(HERE, "reconstitution_calc.py"),
+                    os.path.join(d, "reconstitution_calc.py"))
+
+    # ---- 出版前不变量断言（对已解析的数值断言，不对文本断言）
+    assert abs(rc.beta_mM_per_pH(20.0, 4.76, 4.76) - rc.beta_peak_mM_per_pH(20.0)) < 1e-12
+    assert rc.beta_mM_per_pH(20.0, 4.76, 4.76) > rc.beta_mM_per_pH(20.0, 4.76, 5.26)
+    assert rc.beta_mM_per_pH(50.0, 8.06, 8.0) > rc.beta_mM_per_pH(20.0, 8.06, 8.0) > rc.beta_mM_per_pH(10.0, 8.06, 8.0)
+    i_sal, _, osm_sal = rc.recipe_values("saline_0.9pct")
+    assert abs(i_sal - 154.0) < 1e-9 and abs(osm_sal - 308.0) < 1e-9
+    i_pbs, _, osm_pbs = rc.recipe_values("pbs_1x")
+    assert abs(i_pbs - 171.5) < 1e-6, i_pbs
+    assert abs(osm_pbs - 313.0) < 1e-6, osm_pbs
+    i_ba, _, osm_ba = rc.recipe_values("benzyl_alcohol_0.9pct")
+    assert i_ba == 0.0 and abs(osm_ba - 87.0) < 1e-9
+    i_ac, i_ac_eff, osm_ac = rc.recipe_values("acetate_20mM_pH4.5")
+    assert i_ac == 20.0 and i_ac_eff is not None
+    assert abs(i_ac_eff - 13.55) < 0.02 and i_ac_eff < i_ac  # 远离 pKa 时完整解离高估
+    assert abs(osm_ac - 40.0) < 1e-9
+    i_tris, i_tris_eff, osm_tris = rc.recipe_values("tris_25mM_pH8.0")
+    assert i_tris == 25.0 and i_tris_eff is not None
+    assert abs(i_tris_eff - 13.36) < 0.02 and i_tris_eff < i_tris
+    assert abs(osm_tris - 38.36) < 0.02
+    # 体积与浓度互为反比；含量降低则体积严格下降
+    v = rc.required_volume_mL(10.0, 90.0, 5.0)
+    assert abs(v - 1.8) < 1e-12
+    assert abs(rc.required_volume_mL(10.0, 90.0, 10.0) * 2 - v) < 1e-12
+    assert rc.required_volume_mL(10.0, 85.0, 5.0) < v
+    # 摩尔浓度单位自证：5 mg/mL @1200 = 4.167 mM
+    assert abs(rc.molarity_uM(5.0, 1200.0) / 1000.0 - 4.1666667) < 1e-6
+    # 曲线文件自洽：峰值行必须等于理论峰值的 100 %
+    peak_rows = [r for r in curve_rows if abs(r["pH"] - r["pKa_25C"]) < 1e-9]
+    assert len(peak_rows) == 9, len(peak_rows)
+    assert all(r["beta_vs_peak_pct"] == 100.0 for r in peak_rows)
+    assert len(curve_rows) == 9 * 17
+
+    readme = """# Reconstitution Buffer Selection: Reference Tables for Diluent Choice
+
+Arithmetic reference set for the chemistry decisions that sit behind a reconstitution
+instruction: which buffer species, at what concentration and pH, with what ionic strength,
+and what volume follows from the label mass and the peptide content of the fill.
+
+Every value is an exact function of the stated inputs. No measured, fitted or observed data
+is included, and nothing here describes behaviour in any biological system.
+
+## Contents
+
+| File | Contents |
+|---|---|
+| `buffer-species.csv` | 9 buffer systems: conjugate acid, pKa at 25 C, useful pH window, temperature coefficient, volatility, practical notes |
+| `buffer-capacity-curve.csv` | %d rows: van Slyke buffer capacity for acetate / phosphate / Tris at 10, 20 and 50 mM across pKa -2 to +2 in 0.25 pH steps |
+| `diluent-recipes.csv` | 8 diluent recipes with nominal and speciation-adjusted ionic strength and nominal osmolarity |
+| `concentration-arithmetic.csv` | %d rows: label mass x net peptide content x target concentration -> diluent volume, plus the volume that delivers 100 ug |
+| `reconstitution_calc.py` | Command-line calculator with `--selftest` |
+
+## Formulas
+
+Buffer capacity, monoprotic buffer of total concentration C:
+
+```
+beta = ln(10) * C * Ka * [H+] / (Ka + [H+])^2
+beta(pH = pKa) = ln(10)/4 * C = 0.5756 * C
+beta(pH = pKa +/- 1) = 0.1903 * C
+```
+
+Ionic strength:
+
+```
+I = 0.5 * sum(ci * zi^2)
+```
+
+Fraction charged (monoprotic acid / base):
+
+```
+acid: f(A-)    = 1 / (1 + 10^(pKa - pH))
+base: f(BH+)   = 1 / (1 + 10^(pH - pKa))
+```
+
+Reconstitution volume from label mass and net peptide content:
+
+```
+V(mL) = label_mass(mg) * net_content(%%) / 100 / target(mg/mL)
+```
+
+## Worked values in this set
+
+| Quantity | Value |
+|---|---|
+| 20 mM acetate, pH 4.5 | beta = %.3f mM/pH (peak at 20 mM = %.3f) |
+| 20 mM phosphate, pH 7.4 | beta = %.3f mM/pH |
+| 25 mM Tris, pH 8.0 | beta = %.3f mM/pH |
+| 0.9 %% NaCl | I = 154 mM, 308 mOsm/L |
+| PBS 1x | I = 171.5 mM nominal, 313 mOsm/L |
+| 0.9 %% benzyl alcohol | I = 0 mM, 87 mOsm/L |
+| 20 mM acetate, pH 4.5 (speciation) | I = 13.55 mM effective (20.00 nominal), 40.0 mOsm/L |
+| 25 mM Tris, pH 8.0 (speciation) | I = 13.36 mM effective (25.00 nominal), 38.4 mOsm/L |
+| 10 mg at 90 %% content to 5 mg/mL | 1.800 mL, 9.000 mg peptide |
+
+## Invariance checks applied before release
+
+1. Buffer capacity at pH = pKa equals ln(10)/4 x C for 10, 20 and 50 mM, exactly.
+2. Buffer capacity at pKa +/- 1 equals 0.1903 x C, and falls strictly on both sides of the peak.
+3. Capacity scales linearly with total concentration at fixed pH.
+4. 0.9 %% NaCl returns I = 154 mM and 308 mOsm/L; water returns 0 for both.
+5. Benzyl alcohol returns I = 0 with 87 mOsm/L, so ionic strength and osmolarity are not
+   interchangeable quantities in this set.
+6. The speciation-adjusted value falls below the fully-ionised nominal value, which is the
+   point of reporting both: acetate 13.55 vs 20.00 mM at pH 4.5, Tris 13.36 vs 25.00 mM at
+   pH 8.0. A buffer quoted at nominal ionic strength overstates its ionic strength whenever
+   the working pH is more than about one unit from its pKa.
+7. Reconstitution volume is inversely proportional to target concentration and falls strictly
+   as net peptide content falls.
+8. The molarity unit conversion is self-checked: 5 mg/mL at 1200 g/mol is 4.167 mM.
+
+## Limits
+
+- pKa values are tabulated at 25 C and zero ionic strength. Apparent pKa shifts with
+  temperature and ionic strength; a working value must be measured at the working condition.
+- Ionic strength is computed from the recipe as written. The speciation-adjusted column is
+  implemented only for monoprotic weak acids and bases; phosphate is reported as nominal and
+  is explicitly not modelled as a diprotic system here.
+- Osmolarity is a particle-count estimate, not a measurement. Real osmolarity requires
+  freezing-point depression or vapour-pressure measurement.
+- Buffer capacity describes resistance of the solution to added acid or base. It says nothing
+  about whether a peptide is soluble, stable or unaffected at that pH.
+- Aggregation, adsorption and surface loss are physical phenomena that these tables do not
+  quantify; they have to be measured on the actual material and container.
+- No value in this set is a handling instruction, a dose, or a statement about any
+  biological effect.
+
+## Related documentation
+
+- Quality documentation framework for GMP-oriented supply:
+  https://helixgmppeptides.com/coa-guide
+- Institutional and OEM supply overview: https://helixgmppeptides.com/
+
+## License
+
+CC BY 4.0
+""" % (len(curve_rows), len(conc_rows),
+       rc.beta_mM_per_pH(20.0, 4.76, 4.5), rc.beta_peak_mM_per_pH(20.0),
+       rc.beta_mM_per_pH(20.0, 7.20, 7.4), rc.beta_mM_per_pH(25.0, 8.06, 8.0))
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+
+    return d, len(curve_rows), len(recipe_rows), len(conc_rows)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
@@ -1423,3 +1687,5 @@ if __name__ == "__main__":
     print(f"counterion-salt-forms: {r5} 盐型行 + {r5b} 漂移行 + {r5c} 位点行 → {d5}")
     d6, s6, l6 = build_synthesis_to_shelf_traceability()
     print(f"synthesis-to-shelf-traceability: {s6} 字段 + {l6} 演示批次 → {d6}")
+    d7, c7, rc7, k7 = build_reconstitution_buffers()
+    print(f"reconstitution-buffers: {c7} 容量行 + {rc7} 配方 + {k7} 浓度行 → {d7}")

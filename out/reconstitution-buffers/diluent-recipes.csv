@@ -1,0 +1,9 @@
+recipe,composition,ionic_strength_nominal_mM,ionic_strength_effective_mM,osmolarity_nominal_mOsm_L,model_note
+water_for_injection,"Sterile water, no solutes",0.0,,0.0,Reference point: no ionic species
+saline_0.9pct,0.9 % w/v NaCl (154 mM),154.0,,308.0,Full dissociation of a strong electrolyte
+pbs_1x,PBS 1x (137 NaCl / 2.7 KCl / 10 Na2HPO4 / 1.8 KH2PO4 mM),171.5,,313.0,Nominal: all weighed salts fully dissociated; phosphate charge as HPO4(2-) / H2PO4(1-) at the recipe ratio
+acetate_20mM_pH4.5,"20 mM sodium acetate, pH 4.5",20.0,13.55,40.0,Effective value uses f(deprotonated) = 35.5 % at pH 4.5
+phosphate_20mM_pH7.4,"20 mM sodium phosphate, pH 7.4",20.0,,40.0,Nominal only: diprotic speciation not modelled in this set
+tris_25mM_pH8.0,"25 mM Tris-HCl, pH 8.0",25.0,13.36,38.4,Effective value uses f(protonated) = 53.4 % at pH 8.0
+tbs_pH7.4,"TBS (25 mM Tris / 137 mM NaCl / 2.7 mM KCl, pH 7.4)",164.7,160.21,324.9,Effective value adds Tris-HCl contribution to the strong salts at pH 7.4
+benzyl_alcohol_0.9pct,0.9 % v/v benzyl alcohol in water (87 mM),0.0,,87.0,Non-ionic: zero ionic strength but 87 mOsm/L of particles

@@ -1,0 +1,10 @@
+buffer,conjugate_acid,pKa_25C,useful_pH_low,useful_pH_high,dpKa_per_C,volatile,notes
+acetate,acetic acid / sodium acetate,4.76,3.6,5.6,0.0002,yes,Volatile as free acid; pH drifts on repeated opening; weak Ni/Co chelator
+citrate,citric acid (pKa2),4.76,3.0,6.2,-0.0024,no,"Three pKa values (3.13 / 4.76 / 6.40); polyvalent anion, high ionic strength per molarity"
+mes,2-(N-morpholino)ethanesulfonic acid,6.1,5.5,6.7,-0.011,no,Sulfonic acid buffer; low membrane permeability in cell work
+histidine,L-histidine (imidazole),6.04,5.5,6.5,-0.017,no,Common in formulated protein/peptide products; zwitterionic
+phosphate,phosphoric acid (pKa2),7.2,6.2,8.2,-0.0028,no,Three pKa values (2.15 / 7.20 / 12.35); precipitation with divalent cations
+hepes,HEPES,7.55,6.8,8.2,-0.014,no,Low temperature coefficient; absorbs below ~230 nm
+tris,tris(hydroxymethyl)aminomethane,8.06,7.0,9.0,-0.028,no,Large temperature coefficient: prepare and measure at the same temperature
+ammonium,ammonium (NH4+),9.25,8.2,10.2,-0.03,yes,Volatile as NH3; loses buffer capacity on standing
+glycine,glycine (pKa2),9.78,8.8,10.6,-0.025,no,"Amino acid buffer; zwitterionic, useful above the phosphate range"

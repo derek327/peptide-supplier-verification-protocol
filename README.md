@@ -27,7 +27,9 @@ documentation-first procurement standard.
 - `docs/purity-vs-peptide-content-math.md` — why HPLC area purity is not peptide content, and what determines the latter
 - `docs/counterion-and-salt-forms.md` — how salt form and counterion move the peptide mass inside a labelled milligram
 - `docs/synthesis-to-shelf-traceability.md` — testing whether a batch record connects a vial to one synthesis run (lot identifier scheme, five record sets, mass and date arithmetic)
+- `docs/reconstitution-buffer-primer.md` — choosing a reconstitution diluent: pKa windows, buffer capacity, ionic strength versus osmolarity, and the arithmetic from label mass to concentration
 - `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
+- `scripts/reconstitution_calc.py` — buffer capacity, ionic strength, osmolarity and reconstitution-volume calculator with `--selftest`
 
 ```bash
 python3 scripts/coa_checklist.py --json coa.json   # exit 0 pass / 1 review / 2 fail
