@@ -331,6 +331,64 @@ RECORDS = {
         "version": "1.0",
         "dir": "synthesis-to-shelf-traceability",
     },
+    "reconstitution-buffers": {
+        "title": (
+            "Reconstitution Buffer Selection Reference Set: Buffer Capacity Curves, "
+            "Diluent Ionic Strength and Concentration Arithmetic"
+        ),
+        "description": (
+            "<p>A reference set for the chemistry decisions behind a reconstitution instruction: "
+            "buffer species and pH window, buffer capacity, ionic strength versus osmolarity, and "
+            "the arithmetic that turns a label mass into a concentration. It contains four data "
+            "files and one calculator: a table of 9 buffer systems (conjugate acid, pKa at "
+            "25&nbsp;&deg;C, useful pH window, temperature coefficient, volatility); 153 "
+            "buffer-capacity rows for acetate, phosphate and Tris at 10, 20 and 50&nbsp;mM across "
+            "pKa &plusmn; 2 in 0.25 pH steps; 8 diluent recipes with both nominal and "
+            "speciation-adjusted ionic strength plus a particle-count osmolarity; 16 rows of "
+            "label mass &times; net peptide content &times; target concentration to diluent volume; "
+            "and a command-line calculator with a self-test.</p>"
+            "<p>Every value is an exact function of the stated inputs &mdash; no measured or "
+            "fitted data is involved, so the tables regenerate exactly. Invariance checks applied "
+            "before release: buffer capacity at pH = pKa equals ln(10)/4 &times; C (0.5756 &times; C) "
+            "and at pKa &plusmn; 1 equals 0.1903 &times; C; 0.9&nbsp;% NaCl returns I = 154&nbsp;mM "
+            "and 308&nbsp;mOsm/L; the speciation-adjusted ionic strength falls below the "
+            "fully-ionised nominal value (acetate 13.55 vs 20.00&nbsp;mM at pH 4.5; Tris 13.36 vs "
+            "25.00&nbsp;mM at pH 8.0); 0.9&nbsp;% benzyl alcohol returns I = 0 with "
+            "87&nbsp;mOsm/L, showing that ionic strength and osmolarity are not interchangeable; "
+            "and reconstitution volume is inverse to target concentration and falls strictly as net "
+            "peptide content falls.</p>"
+            "<p>Stated limits: pKa values are tabulated at 25&nbsp;&deg;C and zero ionic strength "
+            "and shift with temperature and ionic strength (Tris most of all, &minus;0.028 per "
+            "&deg;C); phosphate is reported as nominal and is explicitly not modelled as a diprotic "
+            "system; osmolarity is a particle-count estimate rather than a measurement. The set "
+            "says nothing about solubility, aggregation or stability of any peptide, and contains "
+            "no handling instruction, dose or biological claim.</p>"
+            "<p>Quality documentation framework for GMP-oriented supply, including the CoA "
+            "structure these diluent statements sit beside: "
+            "<a href=\"https://helixgmppeptides.com/coa-guide\">helixgmppeptides.com/coa-guide</a>. "
+            "Institutional supply overview: "
+            "<a href=\"https://helixgmppeptides.com/\">helixgmppeptides.com</a>.</p>"
+        ),
+        "creator": "Helix GMP Peptides",
+        "affiliation": "Helix GMP Peptides (quality documentation)",
+        "keywords": [
+            "reconstitution", "buffer capacity", "ionic strength", "osmolarity", "pKa",
+            "diluent selection", "peptide handling", "laboratory arithmetic",
+            "quality documentation", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://helixgmppeptides.com/coa-guide", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://helixgmppeptides.com/", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": (
+            "All values are exact functions of the stated inputs; see README formulas. "
+            "Phosphate speciation is deliberately not modelled in this set."
+        ),
+        "version": "1.0",
+        "dir": "reconstitution-buffers",
+    },
 }
 
 
