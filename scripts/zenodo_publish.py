@@ -389,6 +389,67 @@ RECORDS = {
         "version": "1.0",
         "dir": "reconstitution-buffers",
     },
+    "solubility-screen": {
+        "title": (
+            "Solubility Screen Design Set for Research Peptides: Buffer-by-pH Matrix, "
+            "Concentration Ladder Mass Budget and Reading Rules"
+        ),
+        "description": (
+            "<p>A reference design for a laboratory solubility screen of a research peptide, "
+            "together with the rule set that turns a series of observations into a bounded "
+            "statement. Four components are provided: a 24-condition design table (acetate, "
+            "citrate, phosphate and Tris at 20&nbsp;mM across pH 3.0&ndash;8.0) carrying the "
+            "van Slyke buffer capacity, its percentage of peak and an adequacy band per well; "
+            "a six-rung two-fold concentration ladder (0.25&ndash;8&nbsp;mg/mL) with net peptide "
+            "mass, weighed mass at 90&nbsp;% net content and the single-stock versus "
+            "direct-weighing budget; a table of ten observation codes split into clear, "
+            "dispersed and solid-phase sets; and eleven fixed reading cases (eight "
+            "concentration series, three screen aggregates) with expected verdicts.</p>"
+            "<p>Every value is an exact function of the stated design inputs &mdash; no "
+            "measured, fitted or literature solubility value is included, and the set reports "
+            "no result for any compound, so the tables can be recomputed exactly. Invariance "
+            "checks applied before release: capacity at pH = pKa equals ln(10)/4 &times; C and "
+            "at pKa &plusmn; 1 equals 0.1903 &times; C; a clear rung above a failed rung is "
+            "classified as a non-monotonic artefact rather than as data; and the ladder's "
+            "direct-weighing cost is exactly 1.969 times the single-stock cost.</p>"
+            "<p>The included <code>solubility_screen.py</code> implements the reading rules "
+            "&mdash; contiguous clear run from the lowest rung, dispersed extent, series "
+            "verdicts (<em>no_hit</em>, <em>floor_only</em>, <em>window</em>, "
+            "<em>beyond_top</em>), screen verdicts and the flags that void a boundary &mdash; "
+            "with a <code>--selftest</code> of 32 assertions. Of the 24 design conditions, 13 "
+            "are <em>insufficient</em> and 3 <em>weak</em> on buffer capacity, which is the "
+            "point of a common pH grid: it shows where a well cannot hold the pH it claims, "
+            "so a haze there is not read as a solubility result.</p>"
+            "<p>The README states plainly what the screen does not establish: clarity is an "
+            "operator judgement rather than a measured concentration, the reading time is part "
+            "of the result, adsorption and filtration losses are invisible to a plate read, and "
+            "the set contains no handling instruction, storage condition, dose or biological "
+            "claim.</p>"
+            "<p>Quality documentation and certificate-of-analysis structure for research "
+            "supply: <a href=\"https://gethelixpeptide.com/quality\">gethelixpeptide.com/quality</a>. "
+            "Product-level documentation and batch records: "
+            "<a href=\"https://gethelixpeptide.com/products\">gethelixpeptide.com/products</a>.</p>"
+        ),
+        "creator": "Helix Peptide Research",
+        "affiliation": "Helix Peptide Research (research peptide documentation)",
+        "keywords": [
+            "solubility screen", "buffer capacity", "pKa", "concentration ladder",
+            "mass balance", "observation coding", "peptide handling",
+            "laboratory design", "quality documentation", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://gethelixpeptide.com/quality", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://gethelixpeptide.com/products", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": (
+            "All values are exact functions of the stated design inputs; see README formulas. "
+            "No measured solubility value is included."
+        ),
+        "version": "1.0",
+        "dir": "solubility-screen",
+    },
 }
 
 

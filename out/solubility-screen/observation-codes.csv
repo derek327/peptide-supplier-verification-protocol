@@ -1,0 +1,11 @@
+code,definition,counts_as_clear,counts_as_dispersed,counts_as_solid_phase
+clear,No scatter against a dark background under oblique light,yes,yes,no
+opalescent,"Tyndall scatter visible, no discrete particles",no,yes,no
+haze,"Uniform cloudiness, no settling at the reading time",no,yes,no
+particulates,Discrete particles or flakes visible,no,no,yes
+precipitate,Material settled on the well floor,no,no,yes
+gel,No meniscus movement on inversion,no,no,no
+film,Residue on the wall above the liquid line,no,no,no
+colour,Colour change relative to the diluent control,no,no,no
+immiscible,Two liquid phases,no,no,no
+bubbles,Entrained air; read again after standing,no,no,no

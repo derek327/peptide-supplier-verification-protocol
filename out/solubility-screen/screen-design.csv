@@ -1,0 +1,25 @@
+well,buffer,buffer_total_mM,pKa_25C,target_pH,dpH_from_pKa,beta_mM_per_pH,beta_vs_peak_pct,buffer_adequacy,form_note,target_conc_mg_per_mL,well_volume_mL,net_peptide_ug,weighed_mass_ug_at_content,molarity_uM_at_MW1200
+A1,acetate,20.0,4.76,3.0,-1.76,0.773,6.7,insufficient,"monoprotic acid, sodium salt",2.0,0.25,500.0,555.56,1666.7
+A2,acetate,20.0,4.76,4.0,-0.76,5.809,50.5,ok,"monoprotic acid, sodium salt",2.0,0.25,500.0,555.56,1666.7
+A3,acetate,20.0,4.76,5.0,0.24,10.677,92.7,ok,"monoprotic acid, sodium salt",2.0,0.25,500.0,555.56,1666.7
+A4,acetate,20.0,4.76,6.0,1.24,2.369,20.6,weak,"monoprotic acid, sodium salt",2.0,0.25,500.0,555.56,1666.7
+A5,acetate,20.0,4.76,7.0,2.24,0.262,2.3,insufficient,"monoprotic acid, sodium salt",2.0,0.25,500.0,555.56,1666.7
+A6,acetate,20.0,4.76,8.0,3.24,0.026,0.2,insufficient,"monoprotic acid, sodium salt",2.0,0.25,500.0,555.56,1666.7
+A7,citrate,20.0,4.76,3.0,-1.76,0.773,6.7,insufficient,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A8,citrate,20.0,4.76,4.0,-0.76,5.809,50.5,ok,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A9,citrate,20.0,4.76,5.0,0.24,10.677,92.7,ok,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A10,citrate,20.0,4.76,6.0,1.24,2.369,20.6,weak,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A11,citrate,20.0,4.76,7.0,2.24,0.262,2.3,insufficient,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A12,citrate,20.0,4.76,8.0,3.24,0.026,0.2,insufficient,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A13,phosphate,20.0,7.2,3.0,-4.2,0.003,0.0,insufficient,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A14,phosphate,20.0,7.2,4.0,-3.2,0.029,0.3,insufficient,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A15,phosphate,20.0,7.2,5.0,-2.2,0.287,2.5,insufficient,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A16,phosphate,20.0,7.2,6.0,-1.2,2.571,22.3,weak,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A17,phosphate,20.0,7.2,7.0,-0.2,10.923,94.9,ok,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A18,phosphate,20.0,7.2,8.0,0.8,5.438,47.2,ok,second pKa of a triprotic acid,2.0,0.25,500.0,555.56,1666.7
+A19,tris,20.0,8.06,3.0,-5.06,0.0,0.0,insufficient,"monoprotic base, hydrochloride salt",2.0,0.25,500.0,555.56,1666.7
+A20,tris,20.0,8.06,4.0,-4.06,0.004,0.0,insufficient,"monoprotic base, hydrochloride salt",2.0,0.25,500.0,555.56,1666.7
+A21,tris,20.0,8.06,5.0,-3.06,0.04,0.3,insufficient,"monoprotic base, hydrochloride salt",2.0,0.25,500.0,555.56,1666.7
+A22,tris,20.0,8.06,6.0,-2.06,0.394,3.4,insufficient,"monoprotic base, hydrochloride salt",2.0,0.25,500.0,555.56,1666.7
+A23,tris,20.0,8.06,7.0,-1.06,3.394,29.5,ok,"monoprotic base, hydrochloride salt",2.0,0.25,500.0,555.56,1666.7
+A24,tris,20.0,8.06,8.0,-0.06,11.458,99.5,ok,"monoprotic base, hydrochloride salt",2.0,0.25,500.0,555.56,1666.7

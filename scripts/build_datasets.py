@@ -1674,6 +1674,356 @@ CC BY 4.0
     return d, len(curve_rows), len(recipe_rows), len(conc_rows)
 
 
+# ---- W11: solubility screen design ----
+
+# Eight reading cases with the verdicts they must produce. Each case is one
+# concentration series (one buffer at one pH); the expected block is what the
+# reader must return, so a change in the rules breaks the build.
+SCREEN_CASES = [
+    {
+        "case": "window_closes",
+        "note": "Clear at the two lowest rungs, uniform haze at 1 mg/mL, solid at 2 mg/mL and above.",
+        "buffer": "acetate", "pH": 4.0,
+        "series": [[0.25, "clear"], [0.5, "clear"], [1.0, "haze"], [2.0, "precipitate"],
+                   [4.0, "precipitate"], [8.0, "precipitate"]],
+        "expected": {"max_clear_mg_per_mL": 0.5, "max_dispersed_mg_per_mL": 1.0,
+                     "verdict": "window",
+                     "flags": ["scatter_only_extent", "solid_phase_observed"]},
+    },
+    {
+        "case": "top_rung_clear",
+        "note": "Clear at every rung including the top: the screen has not found the upper bound.",
+        "buffer": "phosphate", "pH": 7.0,
+        "series": [[0.25, "clear"], [0.5, "clear"], [1.0, "clear"], [2.0, "clear"],
+                   [4.0, "clear"], [8.0, "clear"]],
+        "expected": {"max_clear_mg_per_mL": 8.0, "max_dispersed_mg_per_mL": 8.0,
+                     "verdict": "beyond_top", "flags": []},
+    },
+    {
+        "case": "floor_fails",
+        "note": "Fails at the lowest rung: no soluble condition in this series.",
+        "buffer": "acetate", "pH": 3.0,
+        "series": [[0.25, "haze"], [0.5, "particulates"], [1.0, "precipitate"]],
+        "expected": {"max_clear_mg_per_mL": None, "max_dispersed_mg_per_mL": 0.25,
+                     "verdict": "no_hit", "flags": ["solid_phase_observed"]},
+    },
+    {
+        "case": "non_monotonic",
+        "note": "Solid at the lowest rung but clear above it: an artefact signal, not a result.",
+        "buffer": "tris", "pH": 8.0,
+        "series": [[0.25, "precipitate"], [0.5, "clear"], [1.0, "clear"], [2.0, "haze"]],
+        "expected": {"max_clear_mg_per_mL": None, "max_dispersed_mg_per_mL": None,
+                     "verdict": "no_hit",
+                     "flags": ["non_monotonic", "solid_phase_observed"]},
+    },
+    {
+        "case": "opalescent_plateau",
+        "note": "Scatter without discrete particles up to 1 mg/mL, solid at 2 mg/mL.",
+        "buffer": "phosphate", "pH": 6.0,
+        "series": [[0.25, "opalescent"], [0.5, "opalescent"], [1.0, "opalescent"],
+                   [2.0, "particulates"]],
+        "expected": {"max_clear_mg_per_mL": None, "max_dispersed_mg_per_mL": 1.0,
+                     "verdict": "no_hit", "flags": ["solid_phase_observed"]},
+    },
+    {
+        "case": "bubbles_first_rung",
+        "note": "Entrained air at the lowest rung: must be re-read, and the series is discontinuous.",
+        "buffer": "acetate", "pH": 5.0,
+        "series": [[0.25, "bubbles"], [0.5, "clear"], [1.0, "clear"], [2.0, "haze"]],
+        "expected": {"max_clear_mg_per_mL": None, "max_dispersed_mg_per_mL": None,
+                     "verdict": "no_hit",
+                     "flags": ["non_monotonic", "re_read_after_standing"]},
+    },
+    {
+        "case": "two_phase",
+        "note": "Phase separation above the lowest rung; the material is not in one liquid phase.",
+        "buffer": "tris", "pH": 7.0,
+        "series": [[0.25, "clear"], [0.5, "immiscible"], [1.0, "immiscible"]],
+        "expected": {"max_clear_mg_per_mL": 0.25, "max_dispersed_mg_per_mL": 0.25,
+                     "verdict": "floor_only", "flags": []},
+    },
+    {
+        "case": "colour_only",
+        "note": "Colour change at both rungs with no scatter: a chemical observation, not a solubility one.",
+        "buffer": "citrate", "pH": 5.0,
+        "series": [[0.25, "colour"], [0.5, "colour"]],
+        "expected": {"max_clear_mg_per_mL": None, "max_dispersed_mg_per_mL": None,
+                     "verdict": "no_hit", "flags": []},
+    },
+]
+
+SCREEN_AGGREGATES = [
+    {
+        "case": "broad_two_species_three_pH",
+        "series": [
+            ["acetate", 4.0, [[0.5, "clear"], [2.0, "haze"]]],
+            ["acetate", 5.0, [[0.5, "clear"], [2.0, "clear"]]],
+            ["acetate", 6.0, [[0.5, "clear"], [2.0, "haze"]]],
+            ["phosphate", 6.0, [[0.5, "clear"], [2.0, "clear"]]],
+            ["phosphate", 7.0, [[0.5, "clear"], [2.0, "haze"]]],
+        ],
+        "expected": {"verdict": "broad", "hits": 5, "saturated_series": 2,
+                     "buffers_hit": ["acetate", "phosphate"], "pH_hit": [4.0, 5.0, 6.0, 7.0]},
+    },
+    {
+        "case": "saturated_all_conditions",
+        "series": [
+            ["acetate", 4.0, [[0.5, "clear"], [2.0, "clear"]]],
+            ["acetate", 5.0, [[0.5, "clear"], [2.0, "clear"]]],
+        ],
+        "expected": {"verdict": "narrow", "hits": 2, "saturated_series": 2,
+                     "buffers_hit": ["acetate"], "pH_hit": [4.0, 5.0]},
+    },
+    {
+        "case": "no_hit_screen",
+        "series": [
+            ["water", 7.0, [[0.5, "particulates"], [2.0, "precipitate"]]],
+            ["water", 8.0, [[0.5, "particulates"], [2.0, "precipitate"]]],
+        ],
+        "expected": {"verdict": "no_hit", "hits": 0, "saturated_series": 0,
+                     "buffers_hit": [], "pH_hit": []},
+    },
+]
+
+
+def build_solubility_screen():
+    """溶解度筛选设计：缓冲×pH 设计表、浓度阶梯质量预算、观察代码表、判读用例。"""
+    import shutil
+    import sys as _sys
+
+    d = os.path.join(OUT, "solubility-screen")
+    os.makedirs(d, exist_ok=True)
+    if HERE not in _sys.path:
+        _sys.path.insert(0, HERE)
+    import solubility_screen as ss
+
+    # ---- 1. 设计表（4 缓冲 × 6 pH）
+    design = ss.design_rows()
+    with open(os.path.join(d, "screen-design.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(design[0].keys()))
+        w.writeheader()
+        w.writerows(design)
+
+    # ---- 2. 浓度阶梯与质量预算
+    ladder = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+    budget = ss.ladder_budget(ladder, ss.WELL_VOLUME_ML, ss.NET_CONTENT_PCT)
+    top = budget["stock_total_mg"]
+    ladder_rows = []
+    running = 0.0
+    for r in budget["rungs"]:
+        running += r["weighed_mg"]
+        ladder_rows.append({
+            "target_conc_mg_per_mL": r["conc_mg_per_mL"],
+            "net_peptide_mg": r["net_mg"],
+            "weighed_mass_mg_at_90pct": r["weighed_mg"],
+            "molarity_uM_at_MW1200": round(ss.molarity_uM(r["conc_mg_per_mL"], ss.PEPTIDE_MW), 1),
+            "pct_of_top_rung": round(100.0 * r["conc_mg_per_mL"] / ladder[-1], 1),
+            "cumulative_direct_weighing_mg": round(running, 4),
+            "single_stock_mg": round(top, 4),
+        })
+    with open(os.path.join(d, "concentration-ladder.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(ladder_rows[0].keys()))
+        w.writeheader()
+        w.writerows(ladder_rows)
+
+    # ---- 3. 观察代码表
+    code_rows = []
+    for code, (is_clear, is_disp, definition) in ss.OBSERVATION_CODES.items():
+        code_rows.append({
+            "code": code, "definition": definition,
+            "counts_as_clear": "yes" if is_clear else "no",
+            "counts_as_dispersed": "yes" if is_disp else "no",
+            "counts_as_solid_phase": "yes" if code in ("particulates", "precipitate") else "no",
+        })
+    with open(os.path.join(d, "observation-codes.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(code_rows[0].keys()))
+        w.writeheader()
+        w.writerows(code_rows)
+
+    # ---- 4. 判读用例（带期望值，构建时逐条自证）
+    cases_out = []
+    for case in SCREEN_CASES:
+        pairs = [(c, code) for c, code in case["series"]]
+        got = ss.read_series(pairs)
+        exp = case["expected"]
+        for key in ("max_clear_mg_per_mL", "max_dispersed_mg_per_mL", "verdict"):
+            assert got[key] == exp[key], "case %s: %s %r != %r" % (case["case"], key, got[key], exp[key])
+        assert got["flags"] == exp["flags"], "case %s flags %r != %r" % (case["case"], got["flags"], exp["flags"])
+        cases_out.append({
+            "case": case["case"], "note": case["note"],
+            "buffer": case["buffer"], "pH": case["pH"],
+            "series_mg_per_mL_and_code": case["series"],
+            "expected": exp,
+            "computed": {k: got[k] for k in ("max_clear_mg_per_mL", "max_dispersed_mg_per_mL",
+                                             "verdict", "flags", "n_rungs")},
+        })
+    for agg in SCREEN_AGGREGATES:
+        series = [{"buffer": b, "pH": p, "pairs": [(c, code) for c, code in pairs]}
+                  for b, p, pairs in agg["series"]]
+        got = ss.read_screen(series)
+        exp = agg["expected"]
+        for key, val in exp.items():
+            assert got[key] == val, "aggregate %s: %s %r != %r" % (agg["case"], key, got[key], val)
+        cases_out.append({
+            "case": agg["case"], "note": "screen-level aggregate over %d series" % len(series),
+            "series": agg["series"], "expected": exp,
+            "computed": {k: got[k] for k in ("verdict", "hits", "n_series", "buffers_hit",
+                                             "pH_hit", "saturated_series", "flags")},
+        })
+    with open(os.path.join(d, "screen-eval-cases.json"), "w", encoding="utf-8") as fh:
+        json.dump({"rules_version": "1.0", "generated_from": "solubility_screen.py",
+                   "cases": cases_out}, fh, indent=2, ensure_ascii=False)
+
+    # ---- 5. 计算器副本
+    shutil.copyfile(os.path.join(HERE, "solubility_screen.py"),
+                    os.path.join(d, "solubility_screen.py"))
+
+    # ---- 6. README（含站点链接）
+    readme = """# Solubility Screen Design Set: Buffer-by-pH Matrix, Concentration Ladder and Reading Rules
+
+A reference design for a solubility screen of a research peptide, plus the rule set
+that turns the observations into a bounded statement. Every number in the tables is
+an exact function of the stated design inputs; no measured, fitted or literature
+solubility value is included, and the set contains no result for any compound.
+
+## Design inputs
+
+| Parameter | Value |
+|---|---|
+| Buffers | acetate, citrate, phosphate, Tris (all 20 mM total) |
+| pH grid | 3.0, 4.0, 5.0, 6.0, 7.0, 8.0 |
+| Screening concentration | 2.0 mg/mL |
+| Well volume | 0.25 mL |
+| Net peptide content assumed | 90 % |
+| Model peptide molar mass | 1200 g/mol |
+| Conditions (stage 1) | 4 buffers x 6 pH = 24 |
+
+The pH grid is deliberately common across buffers rather than centred on each pKa.
+That is what makes the buffer-adequacy column necessary: a condition can fail because
+the peptide is insoluble, or because the buffer cannot hold the pH it claims. The
+adequacy screen separates the two before any interpretation.
+
+## Buffer adequacy
+
+Buffer capacity is the van Slyke expression for a monoprotic buffer:
+
+    f  = 1 / (1 + 10^(pKa - pH))
+    beta = ln(10) * C * f * (1 - f)        [mM per pH unit]
+
+The maximum is at pH = pKa and equals ln(10)/4 * C = 0.5756 * C. At pKa +/- 1 the
+value falls to 0.1903 * C, i.e. a third of the peak. The adequacy bands used here:
+
+| Band | Rule | Reading |
+|---|---|---|
+| ok | >= 20 % of peak and >= 3 mM/pH | pH is held; observation is interpretable |
+| weak | 10-20 % of peak or 2-3 mM/pH | observation kept, flagged, not used to set a boundary |
+| insufficient | < 10 % of peak or < 2 mM/pH | pH not held; the well cannot support a solubility statement |
+
+Worked points from `screen-design.csv` (all 20 mM):
+
+| Buffer | pH | beta (mM/pH) | % of peak | Band |
+|---|---|---|---|---|
+| acetate | 3.0 | {ac3:.3f} | {ac3p:.1f} | insufficient |
+| acetate | 5.0 | {ac5:.3f} | {ac5p:.1f} | ok |
+| acetate | 6.0 | {ac6:.3f} | {ac6p:.1f} | weak |
+| phosphate | 7.0 | {ph7:.3f} | {ph7p:.1f} | ok |
+| Tris | 3.0 | {tr3:.3f} | {tr3p:.1f} | insufficient |
+| Tris | 8.0 | {tr8:.3f} | {tr8p:.1f} | ok |
+
+Tris at pH 3 retains {tr3pct:.4f} % of its peak capacity: the well is effectively
+unbuffered, and a haze there is a pH-drift observation rather than a solubility one.
+Across the 24 conditions, {n_insufficient:d} are `insufficient` and {n_weak:d} are
+`weak`, so two thirds of the grid exists to show where a buffer must not be trusted.
+
+## Concentration axis and mass budget
+
+One concentration gives a pass/fail, not a boundary. A six-rung two-fold ladder
+(0.25 to 8 mg/mL) at 0.25 mL per well is used here.
+
+Direct weighing every rung costs the sum of the rung masses; preparing one stock at
+the top rung and diluting costs only the top rung. For this ladder the ratio is
+**{ratio:.3f}** (total {direct:.4f} mg versus {stock:.4f} mg at 90 % net content),
+so the ladder is prepared from one stock, and the stock mass is what has to be
+available in the vial.
+
+The mass column is net peptide; the weighing column divides by net content. At
+90 % content the top rung needs {stock:.4f} mg of material to deliver {net_top:.4f} mg
+of peptide in {vol:.2f} mL. Two further corrections matter and are not in the table:
+salt form changes the peptide fraction of the weighed mass, and volumetric flasks
+carry a tolerance that matters at the low rungs.
+
+## Reading rules
+
+Observation codes are declared in `observation-codes.csv`. Only `clear` counts as
+clear; `opalescent` and `haze` count as dispersed (no discrete particles) but not
+clear; `particulates`, `precipitate`, `gel`, `film`, `colour`, `immiscible` and
+`bubbles` count as neither.
+
+1. **Maximum clear concentration** = the highest rung of the contiguous clear run
+   that starts at the lowest rung. A clear rung above a failed rung does not extend
+   the run; the series is flagged `non_monotonic`.
+2. **Dispersed extent** = the same rule applied to `clear + opalescent + haze`.
+   Reporting only this number overstates what was established, because scatter at a
+   rung means the material is not fully in solution at that concentration.
+3. **Series verdict**: `no_hit` (no clear rung), `floor_only` (only the lowest rung
+   clear, so the boundary lies below the ladder), `window` (boundary inside the
+   ladder), `beyond_top` (top rung clear, so the ladder is too short).
+4. **Screen verdict** over hit series: `single_condition`, `ph_dependent` (one
+   buffer, three or more pH), `species_dependent` (two or more buffers, fewer than
+   three pH), `broad` (two or more buffers and three or more pH), or `no_hit`.
+5. **Flags that void a boundary**: `non_monotonic` (repeat before using the series),
+   `re_read_after_standing` (air), `solid_phase_observed` (record the solid, do not
+   report only the clear rungs), `scatter_only_extent` (clear and dispersed extents
+   differ), and `screen_saturated` (every series `beyond_top`, which is a ladder
+   problem or a detection-insensitivity problem before it is a solubility result).
+
+`screen-eval-cases.json` contains {ncases:d} reading cases with fixed expected
+verdicts; the builder asserts every one of them, and `solubility_screen.py --selftest`
+asserts the same rules plus the arithmetic identities.
+
+## What the screen does not establish
+
+- Clarity is an operator judgement against a background, not a measured concentration.
+  A "clear" well can still contain material below the visible threshold; the screen
+  bounds, it does not quantify.
+- Reading time is part of the result. A rung that is clear at one hour and hazy at
+  twenty-four has two different answers, and neither is the equilibrium value.
+- Adsorption to the container and loss through filters are not visible in a plate
+  read; at the low rungs they can dominate the mass balance.
+- Temperature, ionic strength and co-solvent change both the buffer pKa and the
+  material's behaviour. A screen run at one temperature does not transfer to another.
+- No value here is a handling instruction, a storage condition, a dose, or a
+  statement about any biological effect.
+
+## Related documentation
+
+- Quality documentation and certificate-of-analysis structure for research supply:
+  https://gethelixpeptide.com/quality
+- Product-level documentation and batch records:
+  https://gethelixpeptide.com/products
+
+## License
+
+CC BY 4.0
+""".format(
+        ac3= ss.beta_mM_per_pH(20.0, 4.76, 3.0), ac3p= 100 * ss.beta_mM_per_pH(20.0, 4.76, 3.0) / ss.beta_peak_mM_per_pH(20.0),
+        ac5= ss.beta_mM_per_pH(20.0, 4.76, 5.0), ac5p= 100 * ss.beta_mM_per_pH(20.0, 4.76, 5.0) / ss.beta_peak_mM_per_pH(20.0),
+        ac6= ss.beta_mM_per_pH(20.0, 4.76, 6.0), ac6p= 100 * ss.beta_mM_per_pH(20.0, 4.76, 6.0) / ss.beta_peak_mM_per_pH(20.0),
+        ph7= ss.beta_mM_per_pH(20.0, 7.20, 7.0), ph7p= 100 * ss.beta_mM_per_pH(20.0, 7.20, 7.0) / ss.beta_peak_mM_per_pH(20.0),
+        tr3pct= 100 * ss.beta_mM_per_pH(20.0, 8.06, 3.0) / ss.beta_peak_mM_per_pH(20.0),
+        tr3= ss.beta_mM_per_pH(20.0, 8.06, 3.0), tr3p= 100 * ss.beta_mM_per_pH(20.0, 8.06, 3.0) / ss.beta_peak_mM_per_pH(20.0),
+        tr8= ss.beta_mM_per_pH(20.0, 8.06, 8.0), tr8p= 100 * ss.beta_mM_per_pH(20.0, 8.06, 8.0) / ss.beta_peak_mM_per_pH(20.0),
+        n_insufficient= sum(1 for r in design if r["buffer_adequacy"] == "insufficient"),
+        n_weak= sum(1 for r in design if r["buffer_adequacy"] == "weak"),
+        ratio= budget["ratio"], direct= budget["direct_total_mg"],
+        stock= budget["stock_total_mg"],
+        net_top= budget["rungs"][-1]["net_mg"], vol= ss.WELL_VOLUME_ML,
+        ncases= len(cases_out),)
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+
+    return d, len(design), len(cases_out), budget["ratio"]
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
@@ -1689,3 +2039,5 @@ if __name__ == "__main__":
     print(f"synthesis-to-shelf-traceability: {s6} 字段 + {l6} 演示批次 → {d6}")
     d7, c7, rc7, k7 = build_reconstitution_buffers()
     print(f"reconstitution-buffers: {c7} 容量行 + {rc7} 配方 + {k7} 浓度行 → {d7}")
+    d8, n8, cases8, ratio8 = build_solubility_screen()
+    print(f"solubility-screen: {n8} 条件 + {cases8} 判读用例（direct/stock {ratio8}x） → {d8}")

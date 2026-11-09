@@ -1,0 +1,548 @@
+{
+  "rules_version": "1.0",
+  "generated_from": "solubility_screen.py",
+  "cases": [
+    {
+      "case": "window_closes",
+      "note": "Clear at the two lowest rungs, uniform haze at 1 mg/mL, solid at 2 mg/mL and above.",
+      "buffer": "acetate",
+      "pH": 4.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "clear"
+        ],
+        [
+          0.5,
+          "clear"
+        ],
+        [
+          1.0,
+          "haze"
+        ],
+        [
+          2.0,
+          "precipitate"
+        ],
+        [
+          4.0,
+          "precipitate"
+        ],
+        [
+          8.0,
+          "precipitate"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": 0.5,
+        "max_dispersed_mg_per_mL": 1.0,
+        "verdict": "window",
+        "flags": [
+          "scatter_only_extent",
+          "solid_phase_observed"
+        ]
+      },
+      "computed": {
+        "max_clear_mg_per_mL": 0.5,
+        "max_dispersed_mg_per_mL": 1.0,
+        "verdict": "window",
+        "flags": [
+          "scatter_only_extent",
+          "solid_phase_observed"
+        ],
+        "n_rungs": 6
+      }
+    },
+    {
+      "case": "top_rung_clear",
+      "note": "Clear at every rung including the top: the screen has not found the upper bound.",
+      "buffer": "phosphate",
+      "pH": 7.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "clear"
+        ],
+        [
+          0.5,
+          "clear"
+        ],
+        [
+          1.0,
+          "clear"
+        ],
+        [
+          2.0,
+          "clear"
+        ],
+        [
+          4.0,
+          "clear"
+        ],
+        [
+          8.0,
+          "clear"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": 8.0,
+        "max_dispersed_mg_per_mL": 8.0,
+        "verdict": "beyond_top",
+        "flags": []
+      },
+      "computed": {
+        "max_clear_mg_per_mL": 8.0,
+        "max_dispersed_mg_per_mL": 8.0,
+        "verdict": "beyond_top",
+        "flags": [],
+        "n_rungs": 6
+      }
+    },
+    {
+      "case": "floor_fails",
+      "note": "Fails at the lowest rung: no soluble condition in this series.",
+      "buffer": "acetate",
+      "pH": 3.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "haze"
+        ],
+        [
+          0.5,
+          "particulates"
+        ],
+        [
+          1.0,
+          "precipitate"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": 0.25,
+        "verdict": "no_hit",
+        "flags": [
+          "solid_phase_observed"
+        ]
+      },
+      "computed": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": 0.25,
+        "verdict": "no_hit",
+        "flags": [
+          "solid_phase_observed"
+        ],
+        "n_rungs": 3
+      }
+    },
+    {
+      "case": "non_monotonic",
+      "note": "Solid at the lowest rung but clear above it: an artefact signal, not a result.",
+      "buffer": "tris",
+      "pH": 8.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "precipitate"
+        ],
+        [
+          0.5,
+          "clear"
+        ],
+        [
+          1.0,
+          "clear"
+        ],
+        [
+          2.0,
+          "haze"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": null,
+        "verdict": "no_hit",
+        "flags": [
+          "non_monotonic",
+          "solid_phase_observed"
+        ]
+      },
+      "computed": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": null,
+        "verdict": "no_hit",
+        "flags": [
+          "non_monotonic",
+          "solid_phase_observed"
+        ],
+        "n_rungs": 4
+      }
+    },
+    {
+      "case": "opalescent_plateau",
+      "note": "Scatter without discrete particles up to 1 mg/mL, solid at 2 mg/mL.",
+      "buffer": "phosphate",
+      "pH": 6.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "opalescent"
+        ],
+        [
+          0.5,
+          "opalescent"
+        ],
+        [
+          1.0,
+          "opalescent"
+        ],
+        [
+          2.0,
+          "particulates"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": 1.0,
+        "verdict": "no_hit",
+        "flags": [
+          "solid_phase_observed"
+        ]
+      },
+      "computed": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": 1.0,
+        "verdict": "no_hit",
+        "flags": [
+          "solid_phase_observed"
+        ],
+        "n_rungs": 4
+      }
+    },
+    {
+      "case": "bubbles_first_rung",
+      "note": "Entrained air at the lowest rung: must be re-read, and the series is discontinuous.",
+      "buffer": "acetate",
+      "pH": 5.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "bubbles"
+        ],
+        [
+          0.5,
+          "clear"
+        ],
+        [
+          1.0,
+          "clear"
+        ],
+        [
+          2.0,
+          "haze"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": null,
+        "verdict": "no_hit",
+        "flags": [
+          "non_monotonic",
+          "re_read_after_standing"
+        ]
+      },
+      "computed": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": null,
+        "verdict": "no_hit",
+        "flags": [
+          "non_monotonic",
+          "re_read_after_standing"
+        ],
+        "n_rungs": 4
+      }
+    },
+    {
+      "case": "two_phase",
+      "note": "Phase separation above the lowest rung; the material is not in one liquid phase.",
+      "buffer": "tris",
+      "pH": 7.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "clear"
+        ],
+        [
+          0.5,
+          "immiscible"
+        ],
+        [
+          1.0,
+          "immiscible"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": 0.25,
+        "max_dispersed_mg_per_mL": 0.25,
+        "verdict": "floor_only",
+        "flags": []
+      },
+      "computed": {
+        "max_clear_mg_per_mL": 0.25,
+        "max_dispersed_mg_per_mL": 0.25,
+        "verdict": "floor_only",
+        "flags": [],
+        "n_rungs": 3
+      }
+    },
+    {
+      "case": "colour_only",
+      "note": "Colour change at both rungs with no scatter: a chemical observation, not a solubility one.",
+      "buffer": "citrate",
+      "pH": 5.0,
+      "series_mg_per_mL_and_code": [
+        [
+          0.25,
+          "colour"
+        ],
+        [
+          0.5,
+          "colour"
+        ]
+      ],
+      "expected": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": null,
+        "verdict": "no_hit",
+        "flags": []
+      },
+      "computed": {
+        "max_clear_mg_per_mL": null,
+        "max_dispersed_mg_per_mL": null,
+        "verdict": "no_hit",
+        "flags": [],
+        "n_rungs": 2
+      }
+    },
+    {
+      "case": "broad_two_species_three_pH",
+      "note": "screen-level aggregate over 5 series",
+      "series": [
+        [
+          "acetate",
+          4.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "haze"
+            ]
+          ]
+        ],
+        [
+          "acetate",
+          5.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "clear"
+            ]
+          ]
+        ],
+        [
+          "acetate",
+          6.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "haze"
+            ]
+          ]
+        ],
+        [
+          "phosphate",
+          6.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "clear"
+            ]
+          ]
+        ],
+        [
+          "phosphate",
+          7.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "haze"
+            ]
+          ]
+        ]
+      ],
+      "expected": {
+        "verdict": "broad",
+        "hits": 5,
+        "saturated_series": 2,
+        "buffers_hit": [
+          "acetate",
+          "phosphate"
+        ],
+        "pH_hit": [
+          4.0,
+          5.0,
+          6.0,
+          7.0
+        ]
+      },
+      "computed": {
+        "verdict": "broad",
+        "hits": 5,
+        "n_series": 5,
+        "buffers_hit": [
+          "acetate",
+          "phosphate"
+        ],
+        "pH_hit": [
+          4.0,
+          5.0,
+          6.0,
+          7.0
+        ],
+        "saturated_series": 2,
+        "flags": []
+      }
+    },
+    {
+      "case": "saturated_all_conditions",
+      "note": "screen-level aggregate over 2 series",
+      "series": [
+        [
+          "acetate",
+          4.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "clear"
+            ]
+          ]
+        ],
+        [
+          "acetate",
+          5.0,
+          [
+            [
+              0.5,
+              "clear"
+            ],
+            [
+              2.0,
+              "clear"
+            ]
+          ]
+        ]
+      ],
+      "expected": {
+        "verdict": "narrow",
+        "hits": 2,
+        "saturated_series": 2,
+        "buffers_hit": [
+          "acetate"
+        ],
+        "pH_hit": [
+          4.0,
+          5.0
+        ]
+      },
+      "computed": {
+        "verdict": "narrow",
+        "hits": 2,
+        "n_series": 2,
+        "buffers_hit": [
+          "acetate"
+        ],
+        "pH_hit": [
+          4.0,
+          5.0
+        ],
+        "saturated_series": 2,
+        "flags": [
+          "screen_saturated"
+        ]
+      }
+    },
+    {
+      "case": "no_hit_screen",
+      "note": "screen-level aggregate over 2 series",
+      "series": [
+        [
+          "water",
+          7.0,
+          [
+            [
+              0.5,
+              "particulates"
+            ],
+            [
+              2.0,
+              "precipitate"
+            ]
+          ]
+        ],
+        [
+          "water",
+          8.0,
+          [
+            [
+              0.5,
+              "particulates"
+            ],
+            [
+              2.0,
+              "precipitate"
+            ]
+          ]
+        ]
+      ],
+      "expected": {
+        "verdict": "no_hit",
+        "hits": 0,
+        "saturated_series": 0,
+        "buffers_hit": [],
+        "pH_hit": []
+      },
+      "computed": {
+        "verdict": "no_hit",
+        "hits": 0,
+        "n_series": 2,
+        "buffers_hit": [],
+        "pH_hit": [],
+        "saturated_series": 0,
+        "flags": []
+      }
+    }
+  ]
+}
