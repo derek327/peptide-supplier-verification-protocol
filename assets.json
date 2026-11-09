@@ -3,6 +3,20 @@
  "assets": [
   {
    "kind": "zenodo",
+   "name": "W11 solubility screen design",
+   "record_id": "24069230",
+   "url": "https://zenodo.org/records/24069230",
+   "doi": "10.5281/zenodo.24069230",
+   "published": "2026-11-09",
+   "targets": [
+    "https://gethelixpeptide.com/quality",
+    "https://gethelixpeptide.com/products"
+   ],
+   "link_verified": "2026-11-09",
+   "link_verified_how": "浏览器抽查记录页：4 条我站锚点（正文 description 2 条 + Related works 2 条），rel 全为 null = dofollow，全页 61 个 <a> 中 nofollow 计数 0；Publisher = Helix Peptide Research；6 个文件在档（README/3 CSV/JSON/solubility_screen.py）"
+  },
+  {
+   "kind": "zenodo",
    "name": "W9 synthesis-to-shelf traceability",
    "record_id": "23654879",
    "url": "https://zenodo.org/records/23654879",
