@@ -3,6 +3,20 @@
  "assets": [
   {
    "kind": "zenodo",
+   "name": "W12 sub-visible particle limits",
+   "record_id": "24268915",
+   "url": "https://zenodo.org/records/24268915",
+   "doi": "10.5281/zenodo.24268915",
+   "published": "2026-11-16",
+   "targets": [
+    "https://helixpeptidesupply.com/catalog",
+    "https://helixpeptidesupply.com/blog/bulk-tirzepatide-peptides-distributor-qc-failures"
+   ],
+   "link_verified": "2026-11-16",
+   "link_verified_how": "浏览器抽查记录页：4 条我站锚点（正文 description 2 条 + Related works 2 条 Is documented by），rel 全为 null = dofollow，全页 67 个 <a> 中 nofollow 计数 0；Publisher = Helix Peptide Supply；8 个文件在档（README/limit-bands.csv/fill-sensitivity.csv/poisson-bounds.csv/size-fractions.csv/method-comparison.csv/particle-cases.json/particle_math.py）"
+  },
+  {
+   "kind": "zenodo",
    "name": "W11 solubility screen design",
    "record_id": "24069230",
    "url": "https://zenodo.org/records/24069230",

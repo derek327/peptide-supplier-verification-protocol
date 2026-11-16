@@ -450,6 +450,75 @@ RECORDS = {
         "version": "1.0",
         "dir": "solubility-screen",
     },
+    "sub-visible-particles": {
+        "title": (
+            "Sub-visible Particle Limits for Research Peptide Documentation: Limit Bands, "
+            "Fill-Rate Arithmetic, Poisson Counting Resolution and Method Boundaries"
+        ),
+        "description": (
+            "<p>Arithmetic for the particle statement that appears on a certificate of analysis "
+            "of a research peptide. Five components are provided: eight compendial limit rows "
+            "(light obscuration and microscopic counting, 10 and 25&nbsp;&micro;m bins, large- and "
+            "small-volume container classes) each converted to a per-mL basis at six fill volumes; "
+            "a fill-sensitivity table spanning 0.5&ndash;500&nbsp;mL; exact two-sided 95&nbsp;% "
+            "Poisson bounds for observed counts 0&ndash;125; a synthetic log-normal size "
+            "distribution binned 1&ndash;1000&nbsp;&micro;m and reported as both count and mass "
+            "fraction; and six decision cases with computed verdicts.</p>"
+            "<p>The table shows why a particle figure is not comparable without its basis. The "
+            "small-volume limit is stated per container and the large-volume limit per mL, so the "
+            "same 6000-per-container result describes 3000&nbsp;per&nbsp;mL in a 2&nbsp;mL vial "
+            "(120&times; the 25/mL line) and 60&nbsp;per&nbsp;mL in a 100&nbsp;mL fill "
+            "(2.4&times;); across a 0.5&nbsp;mL fill the factor reaches 480&times;. The class "
+            "boundary is itself a step: a 100&nbsp;mL fill is allowed 60&nbsp;per&nbsp;mL and a "
+            "100.001&nbsp;mL fill 25&nbsp;per&nbsp;mL. Microscopic limits sit at roughly half the "
+            "light-obscuration limits, so 20&nbsp;particles/mL passes one method and fails the "
+            "other on the same sample.</p>"
+            "<p>Counts are treated as Poisson variables: a zero count in a 5&nbsp;mL sample is "
+            "compatible with up to 0.60&nbsp;particles/mL and gives a 41.7&times; margin against "
+            "the 25/mL line, while a true mean sitting exactly on the limit passes a single test "
+            "about 52&nbsp;% of the time. Dilution is handled explicitly &mdash; a count of 900 in "
+            "1&nbsp;mL of a 10-fold dilution is 9000&nbsp;per&nbsp;mL of the original. In the model "
+            "size distribution the 10&nbsp;&micro;m and larger bins hold 7.1&nbsp;% of particles by "
+            "number but 91.8&nbsp;% of the mass, which is why number-weighted and mass-weighted "
+            "statements about one sample disagree. A five-row method table lists the practical size "
+            "floor, ceiling, measurand and blind spot of light obscuration, membrane microscopy, "
+            "flow imaging, resonant mass measurement and visual inspection.</p>"
+            "<p>The included <code>particle_math.py</code> implements the limit table, the "
+            "per-container to per-mL conversions, the Poisson solver, the dilution conversion and a "
+            "decision engine with flags for basis swaps, dilution, upper-bound exceedance and "
+            "coincidence range, with a <code>--selftest</code> that asserts every path. The README "
+            "states the boundaries plainly: no measured particle count is included, the limit "
+            "values are transcribed from the published compendial tables and must be re-read "
+            "against the current revision, and nothing here is a release decision, a handling "
+            "instruction, a storage condition, a dose or a statement about any biological effect.</p>"
+            "<p>Catalog and product documentation for research supply: "
+            "<a href=\"https://helixpeptidesupply.com/catalog\">helixpeptidesupply.com/catalog</a>. "
+            "QC failure patterns in bulk peptide supply: "
+            "<a href=\"https://helixpeptidesupply.com/blog/bulk-tirzepatide-peptides-distributor-qc-failures\">"
+            "helixpeptidesupply.com/blog/bulk-tirzepatide-peptides-distributor-qc-failures</a>.</p>"
+        ),
+        "creator": "Helix Peptide Supply",
+        "affiliation": "Helix Peptide Supply (research peptide documentation)",
+        "keywords": [
+            "sub-visible particles", "particulate matter", "light obscuration",
+            "membrane microscopy", "Poisson confidence bounds", "container fill",
+            "dilution arithmetic", "particle size distribution", "quality documentation",
+            "procurement",
+        ],
+        "related": [
+            {"identifier": "https://helixpeptidesupply.com/catalog", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://helixpeptidesupply.com/blog/bulk-tirzepatide-peptides-distributor-qc-failures",
+             "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": (
+            "All values are computations on stated inputs; the limit rows are transcribed from the "
+            "published compendial tables named in the module. No measured particle count is included."
+        ),
+        "version": "1.0",
+        "dir": "sub-visible-particles",
+    },
 }
 
 
