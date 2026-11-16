@@ -2024,6 +2024,303 @@ CC BY 4.0
     return d, len(design), len(cases_out), budget["ratio"]
 
 
+# ---- W12: sub-visible particle limits ---------------------------------------
+def build_sub_visible_particles():
+    """亚可见颗粒：限度表、按装量的每 mL 换算、Poisson 置信界、尺寸分布、方法对照、判定用例。"""
+    import shutil
+    import sys as _sys
+
+    d = os.path.join(OUT, "sub-visible-particles")
+    os.makedirs(d, exist_ok=True)
+    if HERE not in _sys.path:
+        _sys.path.insert(0, HERE)
+    import particle_math as pm
+
+    # ---- 1. 限度表 + 每 mL 换算
+    fills = [1.0, 2.0, 5.0, 10.0, 50.0, 100.0]
+    limit_rows = []
+    for key in ("LVP_LO_10", "LVP_LO_25", "LVP_MICRO_10", "LVP_MICRO_25",
+                "SVI_LO_10", "SVI_LO_25", "SVI_MICRO_10", "SVI_MICRO_25"):
+        bin_um, value, basis = pm.LIMITS[key]
+        row = {"klass": key, "size_bin_um": bin_um, "limit_value": value, "limit_basis": basis}
+        for f in fills:
+            row["per_mL_at_%gmL" % f] = round(pm.per_mL(value, basis, f), 3)
+        limit_rows.append(row)
+    with open(os.path.join(d, "limit-bands.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(limit_rows[0].keys()))
+        w.writeheader()
+        w.writerows(limit_rows)
+
+    # ---- 2. 装量敏感性（同一容器限值在不同装量下的每 mL 严格度）
+    lvp10 = pm.LIMITS["LVP_LO_10"][1]
+    fill_rows = []
+    for f in (0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 100.001, 250.0, 500.0):
+        cls = pm.container_class(f)
+        if cls == "SVI":
+            v = pm.per_mL(pm.LIMITS["SVI_LO_10"][1], "per_container", f)
+            fill_rows.append({"fill_mL": f, "container_class": cls,
+                              "per_mL_limit_at_10um": round(v, 3),
+                              "ratio_vs_LVP_25_per_mL": round(v / lvp10, 3)})
+        else:
+            fill_rows.append({"fill_mL": f, "container_class": cls,
+                              "per_mL_limit_at_10um": lvp10,
+                              "ratio_vs_LVP_25_per_mL": 1.0})
+    with open(os.path.join(d, "fill-sensitivity.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(fill_rows[0].keys()))
+        w.writeheader()
+        w.writerows(fill_rows)
+
+    # ---- 3. Poisson 界（计数分辨率）
+    poisson_rows = []
+    for n in (0, 1, 2, 3, 5, 10, 25, 50, 100, 125):
+        lo, hi = pm.poisson_bounds(n)
+        poisson_rows.append({
+            "observed_count": n,
+            "lower_95": round(lo, 4),
+            "upper_95": round(hi, 4),
+            "upper_per_mL_at_5mL": round(hi / 5.0, 4),
+            "ratio_upper_over_observed": ("" if n == 0 else round(hi / n, 3)),
+        })
+    with open(os.path.join(d, "poisson-bounds.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(poisson_rows[0].keys()))
+        w.writeheader()
+        w.writerows(poisson_rows)
+
+    # ---- 4. 尺寸分布（合成模型：数量分数 vs 质量分数）
+    fr = pm.size_fractions()
+    size_rows = [{
+        "size_bin_um": "%g-%g" % (r["lo_um"], r["hi_um"]),
+        "count_pct": round(r["count_pct"], 4),
+        "mass_pct": round(r["mass_pct"], 4),
+        "ratio_mass_to_count": round(r["mass_pct"] / r["count_pct"], 3) if r["count_pct"] else "",
+    } for r in fr]
+    with open(os.path.join(d, "size-fractions.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(size_rows[0].keys()))
+        w.writeheader()
+        w.writerows(size_rows)
+    count_above10 = sum(r["count_pct"] for r in fr if r["lo_um"] >= 10.0)
+    mass_above10 = sum(r["mass_pct"] for r in fr if r["lo_um"] >= 10.0)
+
+    # ---- 5. 方法对照（方法特性，非测量结果）
+    METHODS = [
+        ("light obscuration (LO)", "~1-2 um", "~100 um flow cell",
+         "equivalent circular diameter from extinction cross-section",
+         "transparent/low-contrast particles; silicone oil droplets; air bubbles",
+         "per mL or per container; coincidence losses above the sensor's linear range", "automated, compendial Method 1"),
+        ("membrane microscopy", "~5 um practical optical floor", "no hard ceiling (filter field)",
+         "projected area and shape on a filter",
+         "particles below the optical floor; material soluble in the filter preparation",
+         "count per filter, then per container", "compendial Method 2; slower; filter background"),
+        ("flow imaging (MFI)", "~2 um", "~100 um",
+         "size plus morphology (aspect ratio, intensity)",
+         "shape classifiers are configured, not universal; silicone oil resembles spheres",
+         "per mL, binned by size and morphology", "gives morphology; classifier-dependent"),
+        ("resonant mass measurement (RMM)", "density-dependent", "narrow window",
+         "buoyant mass, hence size from an assumed density",
+         "particles outside the density-size window; size errors if density is assumed",
+         "per mL in a size band", "separates silicone oil from peptide by sign of buoyant mass"),
+        ("visual inspection", "~150 um reference for parenterals", "no ceiling",
+         "human or camera judgement against illumination",
+         "everything below the visibility threshold, and transparent particles at any size",
+         "visible / not visible; no count", "different question from sub-visible counting"),
+    ]
+    with open(os.path.join(d, "method-comparison.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["method", "practical_size_floor", "size_ceiling", "what_is_measured",
+                    "what_it_cannot_see", "output_unit", "notes"])
+        w.writerows(METHODS)
+
+    # ---- 6. 判定用例（逐条自证）
+    cases_out = []
+    for case in pm.CASES:
+        got = pm.evaluate_case(case)
+        assert got["verdict"] == case["expected"]["verdict"], (case["case"], got)
+        assert got["flags"] == sorted(case["expected"]["flags"]), (case["case"], got["flags"])
+        rec = dict(case)
+        rec["computed"] = got
+        cases_out.append(rec)
+    with open(os.path.join(d, "particle-cases.json"), "w", encoding="utf-8") as fh:
+        json.dump({"rules_version": "1.0", "generated_from": "particle_math.py",
+                   "cases": cases_out}, fh, indent=2, ensure_ascii=False)
+
+    # ---- 7. 计算器副本
+    shutil.copyfile(os.path.join(HERE, "particle_math.py"),
+                    os.path.join(d, "particle_math.py"))
+
+    # ---- 8. 出版前不变量断言（数值、换算、统计口径）
+    assert len(limit_rows) == 8
+    ratio_2 = pm.per_mL(6000.0, "per_container", 2.0) / lvp10
+    ratio_100 = pm.per_mL(6000.0, "per_container", 100.0) / lvp10
+    assert abs(ratio_2 - 120.0) < 1e-12 and abs(ratio_100 - 2.4) < 1e-12
+    # 同一 100 mL 液体，装量跨过 100 mL 线时限值跳 2.4 倍
+    assert pm.container_class(100.0) == "SVI" and pm.container_class(100.001) == "LVP"
+    assert abs(pm.per_mL(6000.0, "per_container", 100.0) - 60.0) < 1e-12
+    # 显微法限度约为光阻法的一半
+    assert abs(pm.LIMITS["LVP_MICRO_10"][1] / pm.LIMITS["LVP_LO_10"][1] - 0.48) < 1e-12
+    # 零计数不等于零：5 mL 里数到 0，95% 上界 0.599/mL，仍是 25/mL 线的 41.7 倍余量
+    assert abs(pm.resolution_per_mL(5.0) - 0.5991) < 1e-3
+    assert abs(25.0 / pm.resolution_per_mL(5.0) - 41.73) < 0.05
+    # 真实均值正好压在限值时，单次检测约有五成机会通过
+    p_pass = pm.pass_probability_at_limit(25.0, 5.0)
+    assert 0.50 < p_pass < 0.55
+    # 尺寸分布：数量与质量口径必须给出相反的印象
+    assert abs(sum(r["count_pct"] for r in fr) - 100.0) < 1e-6
+    assert abs(sum(r["mass_pct"] for r in fr) - 100.0) < 1e-6
+    assert 6.5 < count_above10 < 8.0 and mass_above10 > 90.0
+    # 稀释换算：10 倍稀释后 1 mL 里数到 900 = 原液 9000/mL
+    assert abs(pm.concentration_after_dilution(900, 1.0, 10.0) - 9000.0) < 1e-9
+    # 每条用例都已在上面的循环里对比过期望
+    assert len(cases_out) == 6
+
+    # ---- 9. README
+    readme = """# Sub-visible Particle Limits for Research Peptide Documentation: Limit Table, Fill-Rate Arithmetic, Counting Resolution and Method Boundaries
+
+Arithmetic for the particle statement that appears on a certificate of analysis of a
+research peptide. Everything in this package is derived from stated inputs: the compendial
+limit tables, the container fill volume, the counted number, the sampled volume and the
+dilution factor. No measured particle count is included, no material was tested, and no
+value here is a release decision for any product.
+
+## Files
+
+| File | Contents |
+|---|---|
+| `limit-bands.csv` | {n_limits} limit rows (light obscuration and microscopic, 10 and 25 um bins, large- and small-volume classes) with the same limit converted to a per-mL basis at six fills |
+| `fill-sensitivity.csv` | the small-volume per-container limit converted across fills 0.5-500 mL, with its ratio to the 25/mL large-volume line |
+| `poisson-bounds.csv` | exact two-sided 95 % Poisson bounds for observed counts 0-125, and the upper bound as a per-mL figure at a 5 mL sample |
+| `size-fractions.csv` | a synthetic log-normal size distribution binned 1-1000 um, reported as count fraction and as mass fraction |
+| `method-comparison.csv` | five counting methods: practical size floor and ceiling, what each measures, what each cannot see, output unit |
+| `particle-cases.json` | {n_cases} decision cases with computed verdicts and flags |
+| `particle_math.py` | the module that generates every table; `--selftest` asserts each path |
+
+## The two size conventions
+
+Compendial reporting uses two fixed bins, 10 um and 25 um. They are conventions tied to the
+methods and to the evidence base behind the limits, not a threshold below which particles
+do not exist. Light obscuration resolves below 1 um, and a reconstituted peptide solution
+routinely contains material in the 1-10 um range that no limit row mentions.
+
+Visibility is a separate convention: a particle is expected to be visible under the
+described inspection conditions at about {vis_um} um for parenteral products. So the
+"sub-visible" range is the range in which a human inspection cannot answer the question,
+which is exactly why an instrument is used. There is no physical discontinuity at that
+size: visibility depends on illumination, background contrast and the particle's own
+refractive index, so a transparent particle can be missed at 200 um while an opaque one is
+seen at 50 um.
+
+## Limits are per container or per mL, and that changes the stringency by up to {ratio_05}x
+
+The small-volume class limit is stated per container (6000 particles at 10 um), the
+large-volume class limit per mL (25 per mL). Converting the per-container limit with the
+fill volume shows how much the per-mL stringency moves:
+
+| Fill | Class | Limit at 10 um as per mL | Ratio to the 25/mL line |
+|---|---|---|---|
+| 0.5 mL | SVI | 12000 | {ratio_05}x |
+| 2 mL | SVI | 3000 | {ratio_2}x |
+| 10 mL | SVI | 600 | {ratio_10}x |
+| 50 mL | SVI | 120 | {ratio_50}x |
+| 100 mL | SVI | 60 | {ratio_100}x |
+| 100.001 mL | LVP | 25 | 1x |
+
+Two consequences. First, the same absolute count means different things in a 2 mL vial and
+a 100 mL vial: a report that says "6000 particles per container, compliant" describes a
+solution at 3000 per mL in the small vial and 60 per mL in the large one. Second, the class
+boundary itself is a step: a 100 mL fill is allowed 60 per mL and a 100.001 mL fill is
+allowed 25 per mL, a {step}x difference in strictness for the same volume of liquid.
+
+## Counting resolution: zero is not zero
+
+Particles are Poisson-distributed in a well-mixed sample, so a count carries its own
+uncertainty. Exact 95 % upper bounds:
+
+| Observed | Upper 95 % bound | As per mL from a 5 mL sample |
+|---|---|---|
+| 0 | {ub0} | {ub0_5} |
+| 1 | {ub1} | {ub1_5} |
+| 10 | {ub10} | {ub10_5} |
+| 100 | {ub100} | {ub100_5} |
+
+A zero count in 5 mL is compatible with a true concentration up to {ub0_5} per mL. Against
+the 25/mL line that is still a {margin}x margin, so a zero count in a 5 mL sample is a
+usable statement - but it is a statement about 5 mL. Two further consequences follow. If the
+true mean sits exactly on the limit, a single test passes about {p_pass} % of the time,
+because the observed count scatters around its expectation; passing once is not evidence
+that the lot sits below the line. And the resolution improves only with sampled volume: at
+25 mL the zero-count bound falls to {res25} per mL.
+
+## Sampling, dilution and the arithmetic that is easy to get wrong
+
+If an aliquot is diluted D-fold before counting, the concentration in the original solution
+is count x D / sampled volume. A count of 900 in 1 mL of a 10-fold dilution is 9000 per mL
+of the original, not 900. Dilution has three costs that are not captured by the factor: the
+diluent itself contributes particles, the dilution shifts the size distribution if the
+particles are not freely suspended, and a diluted sample can no longer be compared with an
+undiluted one on the same per-mL basis without stating both.
+
+## What each method can and cannot see
+
+The table in `method-comparison.csv` lists five methods against size floor, size ceiling,
+measurand, blind spot and output unit. The differences that matter for a documentation
+review: light obscuration counts by extinction and therefore counts silicone oil droplets
+and can count air; membrane microscopy sees morphology but loses everything below its
+optical floor and adds filter background; flow imaging gives shape but its classifiers are
+configured per method; resonant mass measurement is the only routine method that separates
+silicone oil from peptide by the sign of the buoyant mass; and visual inspection answers a
+different question entirely.
+
+## The lyophilized case
+
+A lyophilized peptide is a powder. It contains no solution to count, so a particle result
+on the powder - or an inspection statement about the cake - says nothing about the
+reconstituted solution, where undissolved peptide, buffer salt crystals, aggregates, filter
+fibres and container or stopper shedding all appear at once. The comparable statement is a
+count on the reconstituted solution at a stated concentration, with the method, the sampled
+volume, the size bins, the container fill and the limit basis all named.
+
+## What the package does not do
+
+- No particle count, size distribution or image of any material is included. The
+  distribution in `size-fractions.csv` is a log-normal model shape chosen to separate count
+  fractions from mass fractions: in that model the 10 um and larger bins hold
+  {count_above10} % of the particles by number but {mass_above10} % of the mass, which is
+  the whole point - a number-weighted count and a mass-weighted statement about the same
+  sample describe different things.
+- The limit values are transcribed from the published compendial tables named in the
+  module. They are not derived here and must be re-read against the current revision before
+  any release decision.
+- Nothing here is a handling instruction, a storage condition, a dose, a safety statement
+  or a claim about any biological effect.
+
+## Related documentation
+
+- Catalog and product documentation for research supply:
+  https://helixpeptidesupply.com/catalog
+- QC failure patterns in bulk peptide supply:
+  https://helixpeptidesupply.com/blog/bulk-tirzepatide-peptides-distributor-qc-failures
+
+## License
+
+CC BY 4.0
+""".format(
+        n_limits=len(limit_rows), n_cases=len(cases_out), vis_um=int(pm.VISIBILITY_REFERENCE_UM),
+        ratio_05=round(pm.per_mL(6000.0, "per_container", 0.5) / lvp10, 1),
+        ratio_2=int(ratio_2), ratio_10=int(pm.per_mL(6000.0, "per_container", 10.0) / lvp10),
+        ratio_50=int(pm.per_mL(6000.0, "per_container", 50.0) / lvp10),
+        ratio_100=round(ratio_100, 1), step=round(ratio_100, 1),
+        ub0=round(pm.poisson_bounds(0)[1], 3), ub0_5=round(pm.poisson_bounds(0)[1] / 5.0, 3),
+        ub1=round(pm.poisson_bounds(1)[1], 3), ub1_5=round(pm.poisson_bounds(1)[1] / 5.0, 3),
+        ub10=round(pm.poisson_bounds(10)[1], 3), ub10_5=round(pm.poisson_bounds(10)[1] / 5.0, 3),
+        ub100=round(pm.poisson_bounds(100)[1], 3), ub100_5=round(pm.poisson_bounds(100)[1] / 5.0, 3),
+        margin=round(25.0 / pm.resolution_per_mL(5.0), 1),
+        res25=round(pm.resolution_per_mL(25.0), 3),
+        p_pass=round(100 * p_pass, 1),
+        count_above10=round(count_above10, 2), mass_above10=round(mass_above10, 2))
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+
+    return d, len(limit_rows), len(cases_out), round(count_above10, 2), round(mass_above10, 2)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
@@ -2041,3 +2338,6 @@ if __name__ == "__main__":
     print(f"reconstitution-buffers: {c7} 容量行 + {rc7} 配方 + {k7} 浓度行 → {d7}")
     d8, n8, cases8, ratio8 = build_solubility_screen()
     print(f"solubility-screen: {n8} 条件 + {cases8} 判读用例（direct/stock {ratio8}x） → {d8}")
+    d9, n9, cases9, c9, m9 = build_sub_visible_particles()
+    print(f"sub-visible-particles: {n9} 限度行 + {cases9} 判定用例"
+          f"（>=10um 数量 {c9}% / 质量 {m9}%） → {d9}")

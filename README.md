@@ -29,9 +29,11 @@ documentation-first procurement standard.
 - `docs/synthesis-to-shelf-traceability.md` — testing whether a batch record connects a vial to one synthesis run (lot identifier scheme, five record sets, mass and date arithmetic)
 - `docs/reconstitution-buffer-primer.md` — choosing a reconstitution diluent: pKa windows, buffer capacity, ionic strength versus osmolarity, and the arithmetic from label mass to concentration
 - `docs/solubility-screen-design.md` — designing and reading a solubility screen: buffer-by-pH matrix with an adequacy column, concentration ladder mass budget, and the rules that turn observations into bounds
+- `docs/sub-visible-particle-limits.md` — reading a particle statement: the 10/25 µm bins versus the 150 µm visibility convention, per-container versus per-mL limits across fills, Poisson counting resolution, dilution arithmetic, and what each counting method cannot see
 - `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
 - `scripts/reconstitution_calc.py` — buffer capacity, ionic strength, osmolarity and reconstitution-volume calculator with `--selftest`
 - `scripts/solubility_screen.py` — buffer-adequacy, mass-budget and plate-reading engine with `--selftest`
+- `scripts/particle_math.py` — particle limit table, per-container/per-mL conversion across fills, exact Poisson bounds, dilution arithmetic and a decision engine with `--selftest`
 
 ```bash
 python3 scripts/coa_checklist.py --json coa.json   # exit 0 pass / 1 review / 2 fail
