@@ -519,6 +519,75 @@ RECORDS = {
         "version": "1.0",
         "dir": "sub-visible-particles",
     },
+    "extractables-leachables": {
+        "title": (
+            "Extractables and Leachables from Container Closure Systems: Surface-to-Volume "
+            "Geometry, Exposure Arithmetic, Extraction Depth and Migration Kinetics"
+        ),
+        "description": (
+            "<p>Reference arithmetic for an extractables and leachables (E&amp;L) statement on a "
+            "research peptide in a glass vial with an elastomeric closure. Six components are "
+            "provided: nine container/fill combinations with wetted area and surface-to-volume "
+            "ratio; 36 rows converting a surface load (0.05&ndash;2.0&nbsp;&micro;g/cm&sup2;) to "
+            "concentration, per-container mass and per-day exposure at one and four containers per "
+            "day; cumulative removal for one to four successive extractions at three per-step "
+            "fractions; first-order migration to a plateau for five rate constants with fraction at "
+            "0&ndash;730 days; an acceleration-factor table for 20&ndash;100&nbsp;kJ/mol between "
+            "25&nbsp;&deg;C and 30/40/50&nbsp;&deg;C; and ten fixed decision cases with computed "
+            "verdicts.</p>"
+            "<p>The geometric basis is closed form: for a cylindrical fill the wetted "
+            "surface-to-volume ratio is 4/D + 1/h. That single relation explains why the same "
+            "0.50&nbsp;&micro;g/cm&sup2; is 3.90&nbsp;&micro;g per container in a 2&nbsp;mL fill "
+            "and 20.08&nbsp;&micro;g per container in a 20&nbsp;mL fill, and why a 0.5&nbsp;mL fill "
+            "of the same vial raises the concentration 1.435 times. Extraction depth is treated "
+            "explicitly: a first extract that removes 60&nbsp;% of what is removable must be "
+            "divided by 0.60 to state the exhaustive total, a 1.667-fold correction that is often "
+            "missing. Migration is modelled as a first-order approach, so a 24-month timepoint at a "
+            "slow rate constant is shown to sit at 51.8&nbsp;% of the plateau rather than at the "
+            "plateau.</p>"
+            "<p>Every value is an exact function of the stated inputs &mdash; no measured "
+            "extractable, leachable or toxicological value is included, so the tables regenerate "
+            "exactly. Invariance checks applied before release: the surface-area identity holds "
+            "across all nine geometry rows, surface-to-volume falls monotonically with container "
+            "format, successive extraction sums to 1&minus;(1&minus;f)<sup>n</sup>, the Arrhenius "
+            "factor increases monotonically with activation energy (2.63 at 50&nbsp;kJ/mol versus "
+            "4.69 at 80&nbsp;kJ/mol for the same 25&rarr;40&nbsp;&deg;C step), and an identified "
+            "fraction of 23.8&nbsp;% corresponds to a 4.2-fold understatement when only identified "
+            "peaks are counted.</p>"
+            "<p>Stated limits: the container dimensions are idealised cylinders with round-number "
+            "inputs rather than catalogue drawings; extraction fractions, rate constants and "
+            "activation energies are illustrative inputs whose sensitivity the tables quantify but "
+            "do not measure; and the three exposure tiers (0.15, 5 and 50&nbsp;&micro;g/day) are "
+            "example inputs spanning three orders of magnitude, not regulatory limits. Passing an "
+            "arithmetic comparison is not a safety determination, and nothing here is a handling "
+            "instruction, a storage condition, a dose or a statement about any biological "
+            "effect.</p>"
+            "<p>Review workflow and documentation structure for research supply: "
+            "<a href=\"https://gethelixpeptide.com/quality\">gethelixpeptide.com/quality</a>. "
+            "Product-level documentation and batch records: "
+            "<a href=\"https://gethelixpeptide.com/products\">gethelixpeptide.com/products</a>.</p>"
+        ),
+        "creator": "Helix Peptide Research",
+        "affiliation": "Helix Peptide Research (research peptide documentation)",
+        "keywords": [
+            "extractables", "leachables", "container closure system", "surface to volume ratio",
+            "migration kinetics", "accelerated aging", "activation energy", "mass balance",
+            "quality documentation", "procurement",
+        ],
+        "related": [
+            {"identifier": "https://gethelixpeptide.com/quality", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+            {"identifier": "https://gethelixpeptide.com/products", "relation": "isdocumentedby",
+             "resource_type": {"id": "publication-other"}},
+        ],
+        "notes": (
+            "All values are computations on stated inputs; see README formulas. The exposure tiers "
+            "are example inputs, not regulatory limits. No measured extractable or leachable value "
+            "is included."
+        ),
+        "version": "1.0",
+        "dir": "extractables-leachables",
+    },
 }
 
 
