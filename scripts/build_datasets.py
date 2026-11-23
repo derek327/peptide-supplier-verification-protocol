@@ -2321,6 +2321,283 @@ CC BY 4.0
     return d, len(limit_rows), len(cases_out), round(count_above10, 2), round(mass_above10, 2)
 
 
+# ---- W13: extractables & leachables from container closure -------------------
+def build_extractables_leachables():
+    """可提取物/可浸出物：容器几何、面密度→暴露量、连续提取、迁移动力学、Arrhenius、判定用例。"""
+    import shutil
+    import sys as _sys
+
+    d = os.path.join(OUT, "extractables-leachables")
+    os.makedirs(d, exist_ok=True)
+    if HERE not in _sys.path:
+        _sys.path.insert(0, HERE)
+    import el_math as em
+
+    # ---- 1. 容器几何：同一面密度在不同容器/装量下的浓度与每容器质量
+    geom_rows = []
+    for name, fill in (("2R", 0.5), ("2R", 1.0), ("2R", 2.0), ("6R", 2.0),
+                       ("6R", 5.0), ("10R", 5.0), ("10R", 10.0),
+                       ("20R", 10.0), ("20R", 20.0)):
+        v = em.vessel(name)
+        area = em.wetted_area(v["d_cm"], fill)
+        sv = em.sv_ratio(v["d_cm"], fill)
+        geom_rows.append({
+            "vessel": name,
+            "fill_mL": fill,
+            "inner_diameter_cm": v["d_cm"],
+            "fill_height_cm": round(em.fill_height(v["d_cm"], fill), 4),
+            "wetted_area_cm2": round(area, 4),
+            "sv_cm2_per_mL": round(sv, 4),
+            "conc_ug_mL_per_1_ug_cm2": round(sv, 4),
+            "ug_per_container_per_1_ug_cm2": round(area, 4),
+            "sv_relative_to_2R_nominal": round(sv / em.sv_ratio(1.2, 2.0), 4),
+        })
+    with open(os.path.join(d, "container-geometry.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(geom_rows[0].keys()))
+        w.writeheader()
+        w.writerows(geom_rows)
+
+    # ---- 2. 面密度 → 浓度 → 每容器 → 每日暴露，并对三档示例阈值给百分比
+    exposure_rows = []
+    for e in (0.05, 0.10, 0.20, 0.50, 1.00, 2.00):
+        for name, fill in (("2R", 2.0), ("10R", 10.0), ("20R", 20.0)):
+            v = em.vessel(name)
+            conc = em.conc_from_surface(e, v["d_cm"], fill)
+            per = em.per_container(e, v["d_cm"], fill)
+            for vpd in (1, 4):
+                day = per * vpd
+                exposure_rows.append({
+                    "e_ug_cm2": e,
+                    "vessel": name,
+                    "fill_mL": fill,
+                    "vials_per_day": vpd,
+                    "conc_ug_mL": round(conc, 5),
+                    "ug_per_container": round(per, 5),
+                    "exposure_ug_day": round(day, 5),
+                    "pct_of_0.15": round(100 * day / 0.15, 2),
+                    "pct_of_5": round(100 * day / 5.0, 2),
+                    "pct_of_50": round(100 * day / 50.0, 2),
+                })
+    with open(os.path.join(d, "extractable-to-exposure.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(exposure_rows[0].keys()))
+        w.writeheader()
+        w.writerows(exposure_rows)
+
+    # ---- 3. 连续提取：单次提取拿到的只是总量的一部分
+    seq_rows = []
+    for f in (0.4, 0.6, 0.8):
+        for n in range(1, 5):
+            total = em.sequential_total(f, n)
+            seq_rows.append({
+                "fraction_removed_per_step": f,
+                "steps": n,
+                "cumulative_fraction": round(total, 6),
+                "reported_if_single_step_as_pct_of_total": round(100 * f / total, 2),
+                "understatement_factor_vs_total": round(1.0 / total, 4),
+            })
+    with open(os.path.join(d, "sequential-extraction.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(seq_rows[0].keys()))
+        w.writeheader()
+        w.writerows(seq_rows)
+
+    # ---- 4. 迁移动力学：一阶趋近平台 + 单时点外推因子
+    kin_rows = []
+    for k in (0.0005, 0.001, 0.005, 0.02, 0.05):
+        row: dict = {
+            "k_per_day": k,
+            "t_half_days": round(em.t_half(k), 2),
+            "t90_days": round(em.t_fraction(k, 0.9), 2),
+        }
+        for t in (0, 30, 90, 180, 365, 730):
+            row["frac_at_%dd" % t] = round(em.first_order(k, t), 5)
+        row["extrapolation_factor_730d"] = (
+            "" if em.first_order(k, 730) == 0 else f"{1.0 / em.first_order(k, 730):.3f}")
+        kin_rows.append(row)
+    with open(os.path.join(d, "migration-kinetics.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(kin_rows[0].keys()))
+        w.writeheader()
+        w.writerows(kin_rows)
+
+    # ---- 5. Arrhenius：加速因子由活化能假设决定
+    af_rows = []
+    for ea in (20, 40, 50, 60, 80, 100):
+        af_rows.append({
+            "activation_energy_kJ_mol": ea,
+            "af_25_to_30C": round(em.arrhenius_af(ea, 25, 30), 4),
+            "af_25_to_40C": round(em.arrhenius_af(ea, 25, 40), 4),
+            "af_25_to_50C": round(em.arrhenius_af(ea, 25, 50), 4),
+            "days_at_25C_equivalent_to_90d_at_40C": round(90 * em.arrhenius_af(ea, 25, 40), 2),
+        })
+    with open(os.path.join(d, "arrhenius-acceleration.csv"), "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(af_rows[0].keys()))
+        w.writeheader()
+        w.writerows(af_rows)
+
+    # ---- 6. 判定用例（逐条自证）
+    cases_out = []
+    for case in em.CASES:
+        got = em.evaluate_case(case)
+        assert got["verdict"] == case["expected"]["verdict"], (case["case"], got)
+        assert got["flags"] == sorted(case["expected"]["flags"]), (case["case"], got["flags"])
+        rec = dict(case)
+        rec["computed"] = got
+        cases_out.append(rec)
+    with open(os.path.join(d, "el-cases.json"), "w", encoding="utf-8") as fh:
+        json.dump({"rules_version": "1.0", "generated_from": "el_math.py",
+                   "tier_note": "例值：0.15 / 5 / 50 ug/day 仅用于跨三个数量级演示算术，不是法规限度",
+                   "cases": cases_out}, fh, indent=2, ensure_ascii=False)
+
+    # ---- 7. 计算器副本
+    shutil.copyfile(os.path.join(HERE, "el_math.py"), os.path.join(d, "el_math.py"))
+
+    # ---- 8. 出版前不变量断言
+    assert len(geom_rows) == 9
+    # 面积恒等式：E*area 必须等于 conc*fill（对未舍入值断言，CSV 只允许 4 位小数误差）
+    for row in geom_rows:
+        v = em.vessel(row["vessel"])
+        exact_area = em.wetted_area(v["d_cm"], row["fill_mL"])
+        assert abs(em.conc_from_surface(0.37, v["d_cm"], row["fill_mL"]) * row["fill_mL"]
+                   - 0.37 * exact_area) < 1e-9
+        assert abs(row["wetted_area_cm2"] - exact_area) < 5e-4
+    # 同一容器减小装量 → S/V 上升；同一面密度下 2R/0.5 mL 是 2 mL 的 1.435 倍
+    sv_2 = em.sv_ratio(1.2, 2.0)
+    assert em.sv_ratio(1.2, 0.5) > sv_2
+    assert abs(em.sv_ratio(1.2, 0.5) / sv_2 - 1.4351) < 1e-3
+    # 大容器同一面密度的每容器质量是 2R 的 5.15 倍
+    assert abs(em.wetted_area(2.2, 20.0) / em.wetted_area(1.2, 2.0) - 5.1506) < 5e-4
+    # 连续提取：单次 f=0.6 只拿到总可提取物的 60%，外推因子 1.667
+    assert abs(em.sequential_total(0.6, 1) - 0.6) < 1e-12
+    assert abs(1.0 / em.sequential_total(0.6, 1) - 1.6667) < 1e-3
+    assert abs(em.sequential_total(0.6, 3) - 0.936) < 1e-12
+    # 慢迁移体：k=0.001/day 在 24 个月只到平台的 51.8%，外推因子 1.93
+    assert abs(em.first_order(0.001, 730.0) - 0.5181) < 1e-4
+    assert abs(1.0 / em.first_order(0.001, 730.0) - 1.9301) < 1e-4
+    # 加速因子随 Ea 单调：50 → 2.628，80 → 4.692（同一 40 °C 条件差 1.79 倍）
+    assert em.arrhenius_af(50, 25, 40) < em.arrhenius_af(80, 25, 40)
+    assert abs(em.arrhenius_af(50, 25, 40) - 2.6279) < 1e-3
+    assert abs(em.arrhenius_af(80, 25, 40) / em.arrhenius_af(50, 25, 40) - 1.7855) < 1e-3
+    # 识别率：NVR 0.42 里认出 0.10 = 23.8%，按已识别物算暴露会低报 4.2 倍
+    assert abs(em.identified_fraction(0.42, 0.10) - 0.2381) < 1e-4
+    assert abs(0.42 / 0.10 - 4.2) < 1e-12
+    assert len(cases_out) == 10
+
+    # ---- 9. README
+    readme = """# Extractables and Leachables from Container Closure Systems: Geometry, Exposure Arithmetic, Extraction Depth and Migration Kinetics
+
+Reference arithmetic for the numbers that appear in an extractables/leachables (E&L)
+statement for a research peptide in a vial. Nothing here is a measured extractable, a
+measured leachable, or a toxicological conclusion: every row is a closed-form function of
+a stated input (geometry, extraction fraction, rate constant, activation energy, or an
+example exposure tier), so the tables regenerate exactly.
+
+## Contents
+
+| File | Description |
+|---|---|
+| `container-geometry.csv` | 9 container/fill combinations: wetted area, surface-to-volume ratio, concentration and per-container mass per 1 ug/cm2 |
+| `extractable-to-exposure.csv` | 36 rows: surface load (0.05-2.0 ug/cm2) x 3 containers x 1 and 4 containers/day -> ug/mL, ug/container, ug/day and percent of three example tiers |
+| `sequential-extraction.csv` | cumulative fraction removed by 1-4 successive extractions at 0.4/0.6/0.8 per step, with the understatement factor of a single step |
+| `migration-kinetics.csv` | first-order approach to plateau for 5 rate constants, fraction at 0/30/90/180/365/730 days, half-life, t90 and the 730-day extrapolation factor |
+| `arrhenius-acceleration.csv` | acceleration factor for 20-100 kJ/mol between 25 C and 30/40/50 C, and the 25 C time equivalent of 90 days at 40 C |
+| `el-cases.json` | 10 fixed decision cases with computed verdicts and qualifying flags |
+| `el_math.py` | the module that generates every value, with `--selftest` |
+| `README.md` | this file |
+
+## Formulas
+
+Surface-to-volume ratio of a cylindrical fill (bottom disc plus wall):
+
+```
+S/V = 4/D + 1/h          [cm2/mL],  h = 4V/(pi D^2)
+```
+
+Surface load to concentration and to per-container mass:
+
+```
+c [ug/mL] = E [ug/cm2] * S/V [cm2/mL]
+m [ug/container] = E * A = c * V          A = pi D^2/4 + pi D h
+exposure [ug/day] = m * (containers/day)
+E_allowable [ug/cm2] = tier [ug/day] / (A * containers/day)
+```
+
+Successive extractions, each removing a fraction f of what remains:
+
+```
+cumulative(n) = 1 - (1-f)^n
+```
+
+First-order approach to a plateau C_inf:
+
+```
+C(t) = C_inf * (1 - exp(-k t))      t_half = ln2/k      t_p = -ln(1-p)/k
+```
+
+Arrhenius acceleration between two absolute temperatures:
+
+```
+AF = exp( -(Ea/R) * (1/T_acc - 1/T_ref) )      R = 8.314462618 J/(mol K)
+```
+
+## What the tables show
+
+1. **One surface load, three different answers.** 0.50 ug/cm2 in a 2 mL fill of a 2R vial
+   is 1.95 ug/mL, 3.90 ug per container and 3.90 ug/day at one container per day. The same
+   surface load in a 20 mL fill of a 20R vial is 20.08 ug per container, because the wetted
+   area is 5.15 times larger. At four containers per day the 2R case becomes 15.60 ug/day.
+2. **Fill volume moves the concentration without changing the load.** S/V = 4/D + 1/h, so a
+   0.5 mL fill of the same 2R vial has an S/V 1.435 times the 2 mL fill: the same ug/cm2
+   gives 1.435 times the ug/mL.
+3. **A single extraction is a fraction of the total.** If one extraction removes 60 % of what
+   is removable, the reported value must be divided by 0.60 to state the total; three
+   successive extractions reach 93.6 %. Reporting the first extract as "the extractables"
+   understates by 1.67 times.
+4. **Migration is a curve, not a number.** At k = 0.001/day the half-life is 693 days, so a
+   24-month timepoint sits at 51.8 % of the plateau and the plateau is 1.93 times the measured
+   value. A T0 result is not a scaled-down version of the plateau.
+5. **The acceleration factor is an assumption.** Between 25 C and 40 C the factor is 2.63 at
+   50 kJ/mol and 4.69 at 80 kJ/mol: identical test conditions, 1.79 times different
+   interpretation. Arrhenius extrapolation transfers a rate constant, not a mechanism.
+6. **Identified compounds are not the whole residue.** With 0.10 ug/cm2 identified against
+   0.42 ug/cm2 of non-volatile residue, the identified fraction is 23.8 %; an exposure figure
+   built only from identified peaks is 4.2 times lower than the residue-based one.
+7. **Extractables set an upper bound, not an exposure.** An exhaustive extractable study
+   describes what the material can release under forcing conditions. A leachable study
+   describes what is present in the product. The first is used as a worst case; treating it
+   as the second overstates, and treating a single leachable timepoint as the plateau
+   understates. Both directions appear in the cases file.
+
+## Boundaries
+
+- The container dimensions are idealised cylinders with round-number dimensions. They are
+  not drawings of any catalogue vial, and real vials have shoulders, neck geometry, coatings
+  and closure surfaces that this model does not represent.
+- The three exposure tiers (0.15, 5 and 50 ug/day) are example inputs chosen to span three
+  orders of magnitude. They are not regulatory limits and must not be quoted as such. Any
+  real programme uses its own threshold basis, route and duration.
+- The extraction fractions and rate constants are illustrative inputs. The arithmetic shows
+  how sensitive a conclusion is to them; it does not supply them.
+- No toxicological, clinical, handling, storage or dosing statement is made or implied.
+  Passing an arithmetic comparison is not a safety determination.
+- A container closure system includes the stopper, any coating or laminate, the adhesive and
+  the ink. This dataset models the wetted area of the glass only, and uses it as the
+  normalising area for the whole system.
+
+## Links
+
+Review workflow and documentation structure for research supply:
+<https://gethelixpeptide.com/quality>
+Product-level documentation and batch records:
+<https://gethelixpeptide.com/products>
+
+## License
+
+CC BY 4.0
+""".format()
+    open(os.path.join(d, "README.md"), "w", encoding="utf-8").write(readme)
+
+    return d, len(geom_rows), len(exposure_rows), len(cases_out)
+
+
 if __name__ == "__main__":
     d1, fields = build_coa_taxonomy()
     print(f"coa-field-taxonomy: {len(fields)} 字段 → {d1}")
@@ -2341,3 +2618,5 @@ if __name__ == "__main__":
     d9, n9, cases9, c9, m9 = build_sub_visible_particles()
     print(f"sub-visible-particles: {n9} 限度行 + {cases9} 判定用例"
           f"（>=10um 数量 {c9}% / 质量 {m9}%） → {d9}")
+    d10, g10, e10, c10 = build_extractables_leachables()
+    print(f"extractables-leachables: {g10} 几何行 + {e10} 暴露行 + {c10} 判定用例 → {d10}")

@@ -30,10 +30,12 @@ documentation-first procurement standard.
 - `docs/reconstitution-buffer-primer.md` — choosing a reconstitution diluent: pKa windows, buffer capacity, ionic strength versus osmolarity, and the arithmetic from label mass to concentration
 - `docs/solubility-screen-design.md` — designing and reading a solubility screen: buffer-by-pH matrix with an adequacy column, concentration ladder mass budget, and the rules that turn observations into bounds
 - `docs/sub-visible-particle-limits.md` — reading a particle statement: the 10/25 µm bins versus the 150 µm visibility convention, per-container versus per-mL limits across fills, Poisson counting resolution, dilution arithmetic, and what each counting method cannot see
+- `docs/extractables-leachables-container-closure.md` — reading a container-closure E&L figure: surface-to-volume geometry, surface load to per-day exposure, why a first extract is a fraction of the total, migration kinetics over shelf life, and how the Arrhenius factor depends on the activation-energy assumption
 - `scripts/coa_checklist.py` — CLI checklist that scores a CoA against a research-grade acceptance baseline (purity threshold, lot match, identity method, method statement)
 - `scripts/reconstitution_calc.py` — buffer capacity, ionic strength, osmolarity and reconstitution-volume calculator with `--selftest`
 - `scripts/solubility_screen.py` — buffer-adequacy, mass-budget and plate-reading engine with `--selftest`
 - `scripts/particle_math.py` — particle limit table, per-container/per-mL conversion across fills, exact Poisson bounds, dilution arithmetic and a decision engine with `--selftest`
+- `scripts/el_math.py` — container geometry (S/V), surface load to per-day exposure, sequential-extraction totals, first-order migration and Arrhenius factors, with a ten-case decision engine and `--selftest`
 
 ```bash
 python3 scripts/coa_checklist.py --json coa.json   # exit 0 pass / 1 review / 2 fail

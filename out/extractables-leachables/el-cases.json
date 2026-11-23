@@ -1,0 +1,305 @@
+{
+  "rules_version": "1.0",
+  "generated_from": "el_math.py",
+  "tier_note": "例值：0.15 / 5 / 50 ug/day 仅用于跨三个数量级演示算术，不是法规限度",
+  "cases": [
+    {
+      "case": "E01 2R, 0.15 ug/cm2, 1 vial/day, mid tier",
+      "e_ug_cm2": 0.15,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "extractable",
+      "expected": {
+        "verdict": "pass",
+        "flags": [
+          "exhaustive_upper_bound"
+        ]
+      },
+      "computed": {
+        "verdict": "pass",
+        "flags": [
+          "exhaustive_upper_bound"
+        ],
+        "exposure_ug_day": 1.169646,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 0.2339,
+        "per_container_ug": 1.169646,
+        "conc_ug_mL": 0.584823,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {}
+      }
+    },
+    {
+      "case": "E02 2R, 0.50 ug/cm2, 1 vial/day, mid tier",
+      "e_ug_cm2": 0.5,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "extractable",
+      "expected": {
+        "verdict": "pass",
+        "flags": [
+          "exhaustive_upper_bound"
+        ]
+      },
+      "computed": {
+        "verdict": "pass",
+        "flags": [
+          "exhaustive_upper_bound"
+        ],
+        "exposure_ug_day": 3.89882,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 0.7798,
+        "per_container_ug": 3.89882,
+        "conc_ug_mL": 1.94941,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {}
+      }
+    },
+    {
+      "case": "E03 same value, 4 vials/day",
+      "e_ug_cm2": 0.5,
+      "vessel": "2R",
+      "vials_per_day": 4,
+      "tier_ug_day": 5.0,
+      "basis": "extractable",
+      "expected": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound"
+        ]
+      },
+      "computed": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound"
+        ],
+        "exposure_ug_day": 15.59528,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 3.1191,
+        "per_container_ug": 3.89882,
+        "conc_ug_mL": 1.94941,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {}
+      }
+    },
+    {
+      "case": "E04 same value against low tier",
+      "e_ug_cm2": 0.5,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 0.15,
+      "basis": "extractable",
+      "expected": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound"
+        ]
+      },
+      "computed": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound"
+        ],
+        "exposure_ug_day": 3.89882,
+        "tier_ug_day": 0.15,
+        "ratio_to_tier": 25.9921,
+        "per_container_ug": 3.89882,
+        "conc_ug_mL": 1.94941,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {}
+      }
+    },
+    {
+      "case": "E05 same value in a 20R fill (larger contact area)",
+      "e_ug_cm2": 0.5,
+      "vessel": "20R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "extractable",
+      "expected": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound",
+          "geometry_sensitive"
+        ]
+      },
+      "computed": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound",
+          "geometry_sensitive"
+        ],
+        "exposure_ug_day": 20.082482,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 4.0165,
+        "per_container_ug": 20.082482,
+        "conc_ug_mL": 1.004124,
+        "area_cm2": 40.165,
+        "sv_cm2_per_mL": 2.0082,
+        "detail": {}
+      }
+    },
+    {
+      "case": "E06 leachable measured 0.08 ug/cm2, low tier",
+      "e_ug_cm2": 0.08,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 0.15,
+      "basis": "leachable",
+      "expected": {
+        "verdict": "fail",
+        "flags": []
+      },
+      "computed": {
+        "verdict": "fail",
+        "flags": [],
+        "exposure_ug_day": 0.623811,
+        "tier_ug_day": 0.15,
+        "ratio_to_tier": 4.1587,
+        "per_container_ug": 0.623811,
+        "conc_ug_mL": 0.311906,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {}
+      }
+    },
+    {
+      "case": "E07 single extraction at f=0.60, mid tier",
+      "e_ug_cm2": 0.5,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "extractable",
+      "extraction_steps": 1,
+      "fraction_per_step": 0.6,
+      "expected": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound",
+          "single_extraction_understates"
+        ]
+      },
+      "computed": {
+        "verdict": "fail",
+        "flags": [
+          "exhaustive_upper_bound",
+          "single_extraction_understates"
+        ],
+        "exposure_ug_day": 6.498033,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 1.2996,
+        "per_container_ug": 3.89882,
+        "conc_ug_mL": 1.94941,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {
+          "reported_exposure_ug_day": 3.89882,
+          "extraction_total_fraction": 0.6
+        }
+      }
+    },
+    {
+      "case": "E08 identified 0.10 of NVR 0.42 ug/cm2, mid tier",
+      "e_ug_cm2": 0.42,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "extractable",
+      "nvr_ug_cm2": 0.42,
+      "identified_ug_cm2": 0.1,
+      "expected": {
+        "verdict": "pass",
+        "flags": [
+          "exhaustive_upper_bound",
+          "unidentified_majority"
+        ]
+      },
+      "computed": {
+        "verdict": "pass",
+        "flags": [
+          "exhaustive_upper_bound",
+          "unidentified_majority"
+        ],
+        "exposure_ug_day": 3.275009,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 0.655,
+        "per_container_ug": 3.275009,
+        "conc_ug_mL": 1.637504,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {
+          "identified_fraction": 0.238095,
+          "identified_only_exposure_ug_day": 0.779764
+        }
+      }
+    },
+    {
+      "case": "E09 30-day timepoint at k=0.001/day read as plateau",
+      "e_ug_cm2": 0.05,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "leachable",
+      "timepoint_days": 30.0,
+      "k_per_day": 0.001,
+      "expected": {
+        "verdict": "fail",
+        "flags": [
+          "early_timepoint",
+          "extrapolated_to_plateau"
+        ]
+      },
+      "computed": {
+        "verdict": "fail",
+        "flags": [
+          "early_timepoint",
+          "extrapolated_to_plateau"
+        ],
+        "exposure_ug_day": 13.191982,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 2.6384,
+        "per_container_ug": 0.389882,
+        "conc_ug_mL": 0.194941,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {
+          "timepoint_fraction_of_plateau": 0.029554
+        }
+      }
+    },
+    {
+      "case": "E10 0.60 ug/cm2 measured leachable, mid tier",
+      "e_ug_cm2": 0.6,
+      "vessel": "2R",
+      "vials_per_day": 1,
+      "tier_ug_day": 5.0,
+      "basis": "leachable",
+      "expected": {
+        "verdict": "pass",
+        "flags": [
+          "near_tier"
+        ]
+      },
+      "computed": {
+        "verdict": "pass",
+        "flags": [
+          "near_tier"
+        ],
+        "exposure_ug_day": 4.678584,
+        "tier_ug_day": 5.0,
+        "ratio_to_tier": 0.9357,
+        "per_container_ug": 4.678584,
+        "conc_ug_mL": 2.339292,
+        "area_cm2": 7.7976,
+        "sv_cm2_per_mL": 3.8988,
+        "detail": {}
+      }
+    }
+  ]
+}
